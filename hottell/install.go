@@ -11,11 +11,8 @@ import (
 	"time"
 )
 
-// install/uninstall — хирургия по живому, без бэкапов: параллельные процессы
-// могут переписывать конфиги агентов, и «восстановить как было при установке»
-// значило бы затереть их работу. Поэтому install добавляет только свои записи
-// (опознаются по слову hottell в команде) и идемпотентен; uninstall читает
-// конфиг сейчас и выкидывает только свои записи, чужое не трогая.
+// install saves the agent configs before changing them. uninstall removes only
+// hooks and MCP; a complete OTel rollback is explicit: hottell restore -backup.
 
 type hookEvent struct {
 	name    string
@@ -205,6 +202,9 @@ func runInstall(p paths, tokenFile string, tokenStdin bool) error {
 	tok := strings.TrimSpace(string(token))
 	if tok == "" {
 		return fmt.Errorf("токен пуст")
+	}
+	if _, err := backupAgentConfigs(p); err != nil {
+		return fmt.Errorf("установка остановлена до изменений: %w", err)
 	}
 	if err := os.MkdirAll(p.cfgDir, 0o700); err != nil {
 		return err
@@ -415,6 +415,9 @@ var claudeLocalEnv = map[string]string{
 }
 
 func runInstallLocal(p paths, base string) error {
+	if _, err := backupAgentConfigs(p); err != nil {
+		return fmt.Errorf("установка остановлена до изменений: %w", err)
+	}
 	if err := os.MkdirAll(p.cfgDir, 0o700); err != nil {
 		return err
 	}

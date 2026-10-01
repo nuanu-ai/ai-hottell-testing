@@ -46,6 +46,15 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	case "restore":
+		fs := flag.NewFlagSet("restore", flag.ExitOnError)
+		backup := fs.String("backup", "", "каталог бэкапа; заменяет конфиги агентов целиком")
+		_ = fs.Parse(args[1:])
+		if err := restoreAgentConfigs(defaultPaths(defaultBinDir), *backup); err != nil {
+			fmt.Fprintln(os.Stderr, "restore:", err)
+			os.Exit(1)
+		}
+		return
 	case "uninstall":
 		fs := flag.NewFlagSet("uninstall", flag.ExitOnError)
 		binDir := fs.String("bin-dir", defaultBinDir, "откуда убрать бинарь")
