@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nuanu-ai/ai-hottell/analytics/skill/schemas.json",
+  "title": "Выходы разбора: корень — глубокий разбор сессии (session-retro); $defs/turn_review — быстрый разбор хода",
+  "description": "draft 29.09.2026. Поля сущностей — analytics/model.md; правила — analytics/catalogue.yaml; быстрый разбор — analytics/quick-review.md.",
+  "type": "object",
+  "required": ["session_id", "human_turns", "episode_reviews", "new_episodes", "detector_checks", "facets", "verdict_opinion"],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {"type": "string"},
+    "human_turns": {"type": "array", "items": {"$ref": "#/$defs/human_turn"}},
+    "episode_reviews": {"type": "array", "items": {"$ref": "#/$defs/episode_review"}},
+    "new_episodes": {"type": "array", "items": {"$ref": "#/$defs/semantic_episode"}},
+    "detector_checks": {
+      "type": "array", "minItems": 13, "maxItems": 13,
+      "description": "Все 13 пунктов каталога v0.1 в фиксированном порядке",
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D01"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D03"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D05"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D07"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D10"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D12"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D13"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D16"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D19"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D22"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D24"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D25"}}}]},
+        {"allOf": [{"$ref": "#/$defs/detector_check"}, {"properties": {"id": {"const": "D26"}}}]}
+      ],
+      "items": false
+    },
+    "facets": {"$ref": "#/$defs/facets"},
+    "verdict_opinion": {"$ref": "#/$defs/verdict_opinion"},
+    "orange_flag": {"$ref": "#/$defs/orange_flag"},
+    "config_review": {"type": "array", "items": {"$ref": "#/$defs/config_item_review"}},
+    "proposals": {"type": "array", "items": {"$ref": "#/$defs/proposal"}},
+    "other_findings": {"type": "array", "description": "проблемы вне каталога — сырьё для новых паттернов после MVP", "items": {"type": "object", "required": ["text", "evidence"], "additionalProperties": false, "properties": {"text": {"type": "string", "maxLength": 200}, "evidence": {"$ref": "#/$defs/evidence"}}}}
+  },
+  "$defs": {
+    "detector_check": {
+      "type": "object",
+      "required": ["id", "status", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"enum": ["D01", "D03", "D05", "D07", "D10", "D12", "D13", "D16", "D19", "D22", "D24", "D25", "D26"]},
+        "status": {"enum": ["suspected", "checked_clear", "insufficient_data", "not_applicable"]},
+        "summary": {"type": "string", "maxLength": 500},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "missing_data": {"type": "array", "items": {"type": "string", "maxLength": 200}}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"enum": ["suspected", "checked_clear"]}}}, "then": {"required": ["evidence"]}},
+        {"if": {"properties": {"status": {"const": "insufficient_data"}}}, "then": {"required": ["missing_data"], "properties": {"missing_data": {"minItems": 1}}}}
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["kind", "id"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"enum": ["call", "turn", "event", "session", "config"]},
+          "id": {"type": "string"},
+          "session_id": {"type": "string"},
+          "note": {"type": "string", "maxLength": 300}
+        }
+      }
+    },
+    "human_turn": {
+      "type": "object",
+      "required": ["turn_index", "class", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "turn_index": {"type": "integer", "minimum": 0},
+        "class": {"enum": ["task", "correction", "clarification", "answer", "goal_change", "new_task", "ack"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "is_instruction": {"type": "boolean", "description": "императив о способе работы — кандидат для D10"},
+        "instruction_summary": {"type": "string", "maxLength": 200}
+      }
+    },
+    "episode_review": {
+      "type": "object",
+      "required": ["episode_id", "decision", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "episode_id": {"type": "string"},
+        "decision": {"enum": ["confirm", "dismiss", "known"]},
+        "reason": {"type": "string", "maxLength": 400},
+        "exclusion": {"type": "string", "description": "какое исключение каталога подошло при dismiss"}
+      }
+    },
+    "semantic_episode": {
+      "type": "object",
+      "required": ["pattern_id", "span", "evidence", "severity", "explanation"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern_id": {"enum": ["D01", "D03", "D05", "D10", "D12", "D19", "D25", "D26"], "description": "D03 — только в пилоте, пока структурные эпизоды не считает ядро"},
+        "span": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "turn_from": {"type": "integer"},
+            "turn_to": {"type": "integer"},
+            "from_ts": {"type": "string"},
+            "to_ts": {"type": "string"}
+          }
+        },
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "severity": {"enum": ["low", "medium", "high"]},
+        "explanation": {"type": "string", "maxLength": 600},
+        "cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tokens": {"type": "integer", "minimum": 0},
+            "minutes": {"type": "number", "minimum": 0},
+            "estimate": {"type": "boolean"}
+          }
+        },
+        "status": {"const": "suspected"}
+      }
+    },
+    "facets": {
+      "type": "object",
+      "required": ["goal_category", "task_statement", "done_criteria"],
+      "additionalProperties": false,
+      "properties": {
+        "goal_category": {"enum": ["support_case", "finance_reconcile", "admin_process", "research_concept", "code_change", "other"]},
+        "segments": {
+          "type": "array",
+          "description": "если в сессии несколько задач",
+          "items": {
+            "type": "object",
+            "required": ["turn_from", "turn_to", "goal_category"],
+            "properties": {
+              "turn_from": {"type": "integer"},
+              "turn_to": {"type": "integer"},
+              "goal_category": {"type": "string"},
+              "task_statement": {"type": "string"}
+            }
+          }
+        },
+        "task_statement": {"type": "string", "maxLength": 300},
+        "done_criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["text", "source"],
+            "additionalProperties": false,
+            "properties": {
+              "text": {"type": "string", "maxLength": 200},
+              "source": {"enum": ["prompt", "orange_flag", "template_proposed", "template_confirmed"]}
+            }
+          }
+        },
+        "prompt_has_criteria": {"type": "boolean"},
+        "time_sinks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["turn_from", "turn_to", "cause"],
+            "additionalProperties": false,
+            "properties": {
+              "turn_from": {"type": "integer"},
+              "turn_to": {"type": "integer"},
+              "cause": {"type": "string", "maxLength": 200},
+              "pattern_id": {"type": "string"}
+            }
+          }
+        },
+        "automation_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["steps", "why"],
+            "additionalProperties": false,
+            "properties": {
+              "steps": {"type": "array", "items": {"type": "string", "maxLength": 120}},
+              "why": {"type": "string", "maxLength": 200},
+              "class": {"enum": ["script", "workflow", "skill"]}
+            }
+          }
+        }
+      }
+    },
+    "verdict_opinion": {
+      "type": "object",
+      "required": ["opinion", "per_criterion"],
+      "additionalProperties": false,
+      "description": "мнение модели; вердикт не меняет",
+      "properties": {
+        "opinion": {"enum": ["verified", "partial", "failed", "unknown"]},
+        "agent_claims_done": {"type": "boolean"},
+        "per_criterion": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["criterion", "status"],
+            "additionalProperties": false,
+            "properties": {
+              "criterion": {"type": "string"},
+              "status": {"enum": ["met", "not_met", "no_data"]},
+              "evidence": {"$ref": "#/$defs/evidence"}
+            }
+          }
+        }
+      }
+    },
+    "orange_flag": {
+      "type": "object",
+      "required": ["open", "questions"],
+      "additionalProperties": false,
+      "properties": {
+        "open": {"type": "boolean"},
+        "questions": {"type": "array", "maxItems": 3, "items": {"enum": ["goal", "done_criteria", "outcome"]}}
+      }
+    },
+    "config_item_review": {
+      "type": "object",
+      "required": ["kind", "path_class", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["agents_md", "claude_md", "memory", "personalization", "skill", "mcp_server"]},
+        "scope": {"enum": ["global", "project"]},
+        "path_class": {"type": "string", "maxLength": 200},
+        "modified_at": {"type": "string"},
+        "hash": {"type": "string"},
+        "status": {"enum": ["fresh", "stale", "unused", "contradicted"]},
+        "models_since_change": {"type": "array", "items": {"type": "string"}},
+        "rules_contradicted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["rule_no", "summary"],
+            "additionalProperties": false,
+            "properties": {
+              "rule_no": {"type": "integer"},
+              "summary": {"type": "string", "maxLength": 200},
+              "evidence": {"$ref": "#/$defs/evidence"}
+            }
+          }
+        }
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "required": ["pattern_id", "evidence", "basis", "cause", "class", "target", "was", "should_be", "expected_effect", "priority", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern_id": {"type": "string"},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "basis": {"enum": ["single_session", "repeated"], "description": "single_session — паттерн подтверждён только в разбираемой сессии; repeated — в ≥ 2 сессиях"},
+        "sessions_count": {"type": "integer", "minimum": 1},
+        "cause": {"type": "string", "maxLength": 400},
+        "class": {"enum": ["policy", "skill", "settings", "hook", "script", "human"]},
+        "target": {"type": "string", "maxLength": 200, "description": "адрес изменения: файл, skill, настройка, событие hook"},
+        "was": {"type": "string", "maxLength": 600},
+        "should_be": {"type": "string", "maxLength": 1200},
+        "existing_rule": {"type": "string", "maxLength": 300, "description": "похожее правило, если уже есть"},
+        "alternative_cause": {"type": "string", "maxLength": 300, "description": "другое возможное объяснение; обязательно для рекомендаций убрать skill или правило"},
+        "expected_effect": {
+          "type": "object",
+          "required": ["metric", "direction"],
+          "additionalProperties": false,
+          "properties": {
+            "metric": {"type": "string"},
+            "direction": {"enum": ["lower", "higher", "zero"]},
+            "note": {"type": "string", "maxLength": 200}
+          }
+        },
+        "priority": {"enum": ["low", "medium", "high"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "implementation_cost": {"enum": ["minutes", "hour", "day"]}
+      },
+      "allOf": [{"if": {"properties": {"basis": {"const": "single_session"}}}, "then": {"properties": {"confidence": {"maximum": 0.6}}}}]
+    },
+    "turn_review": {
+      "type": "object",
+      "description": "Быстрый разбор одного хода: реплика человека → ответ агента. session_id и turn_index добавляет запуск.",
+      "required": ["human_turn_class", "confidence", "instruction", "claims_done", "ends_with_question", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {"type": "string"},
+        "turn_index": {"type": "integer", "minimum": 0},
+        "human_turn_class": {"enum": ["task", "correction", "clarification", "answer", "goal_change", "new_task", "ack"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "instruction": {"type": ["string", "null"], "maxLength": 200, "description": "инструкция о способе работы — пересказ одной фразой; кандидат для D10"},
+        "claims_done": {"type": "boolean"},
+        "ends_with_question": {"type": "boolean"},
+        "summary": {"type": "string", "maxLength": 120}
+      }
+    }
+  }
+}

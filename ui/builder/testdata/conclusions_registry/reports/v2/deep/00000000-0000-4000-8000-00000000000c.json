@@ -1,0 +1,255 @@
+{
+ "kind": "deep",
+ "schema_version": 2,
+ "session_id": "00000000-0000-4000-8000-00000000000c",
+ "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+ "analysis_version": "fixture-2.0",
+ "tasks": [
+  {
+   "task_id": "T01",
+   "goal": "Пересчитать выдуманную полку",
+   "goal_evidence": [
+    "L5"
+   ],
+   "scope": "Склад",
+   "start_line": 5,
+   "end_line": 40,
+   "boundary_evidence": [
+    "L5"
+   ],
+   "success_criteria": [
+    "Готово"
+   ],
+   "outcome": "partial",
+   "outcome_basis": [
+    "L40"
+   ],
+   "claims": []
+  },
+  {
+   "task_id": "T02",
+   "goal": "Пересчитать выдуманную полку (второе задание)",
+   "goal_evidence": [
+    "L41"
+   ],
+   "scope": "Склад",
+   "start_line": 41,
+   "end_line": 90,
+   "boundary_evidence": [
+    "L41"
+   ],
+   "success_criteria": [
+    "Готово"
+   ],
+   "outcome": "verified",
+   "outcome_basis": [
+    "L90"
+   ],
+   "claims": []
+  }
+ ],
+ "checks": [
+  {
+   "id": "D01",
+   "status": "not_checked",
+   "summary": "Проверка D01 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D03",
+   "status": "not_checked",
+   "summary": "Проверка D03 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D05",
+   "status": "not_checked",
+   "summary": "Проверка D05 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D07",
+   "status": "not_checked",
+   "summary": "Проверка D07 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D10",
+   "status": "not_checked",
+   "summary": "Проверка D10 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D12",
+   "status": "suspected",
+   "summary": "Проверка D12 в фикстуре.",
+   "evidence": [
+    "L5"
+   ],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D13",
+   "status": "not_checked",
+   "summary": "Проверка D13 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D16",
+   "status": "not_checked",
+   "summary": "Проверка D16 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D19",
+   "status": "not_checked",
+   "summary": "Проверка D19 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D22",
+   "status": "not_checked",
+   "summary": "Проверка D22 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D24",
+   "status": "not_checked",
+   "summary": "Проверка D24 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D25",
+   "status": "not_checked",
+   "summary": "Проверка D25 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  },
+  {
+   "id": "D26",
+   "status": "not_checked",
+   "summary": "Проверка D26 в фикстуре.",
+   "evidence": [],
+   "missing_data": [],
+   "task_ids": [
+    "T01"
+   ]
+  }
+ ],
+ "observations": [],
+ "proposal_candidates": [
+  {
+   "proposal_id": "p2:shared",
+   "group_key": "p2:shared",
+   "pattern_id": "D12",
+   "change_intent": "выдуманное намерение",
+   "action": "Проверять границу складов",
+   "observed": "Наблюдение фикстуры.",
+   "cause": "Причина фикстуры.",
+   "alternative_causes": [],
+   "existing_rule": {
+    "status": "not_checked",
+    "description": "",
+    "locator": "",
+    "version": ""
+   },
+   "change_type": "script",
+   "selection_reason": "Выбор фикстуры.",
+   "scope": "Выдуманный склад",
+   "target": {
+    "kind": "script",
+    "locator": "/tmp/fixture/stock_check.py",
+    "version": ""
+   },
+   "change": "Сверять остатки перед ответом.",
+   "preconditions": [],
+   "exceptions": [],
+   "verification": "Тестовый набор проходит.",
+   "rollback": "Вернуть прежнюю версию.",
+   "expected_effect": "Меньше коррекций.",
+   "priority": "high",
+   "readiness": {
+    "status": "hypothesis",
+    "reason": "Причина готовности."
+   },
+   "decision": {
+    "status": "not_requested",
+    "at": ""
+   },
+   "execution": {
+    "status": "not_applied",
+    "at": "",
+    "version": "",
+    "evidence": []
+   },
+   "effect": {
+    "status": "not_measured",
+    "method": "",
+    "metric": "",
+    "n_before": 0,
+    "n_after": 0,
+    "note": ""
+   },
+   "sources": [
+    {
+     "session_id": "00000000-0000-4000-8000-00000000000c",
+     "task_id": "T01",
+     "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+     "evidence": [
+      "L7"
+     ]
+    }
+   ],
+   "analysis_versions": [
+    "fixture-2.0"
+   ]
+  }
+ ],
+ "unknowns": []
+}

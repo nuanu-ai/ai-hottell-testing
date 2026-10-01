@@ -1,0 +1,1 @@
+export { TelemetrySettingsPage } from './TelemetrySettingsPage';

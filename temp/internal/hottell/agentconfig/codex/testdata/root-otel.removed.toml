@@ -1,0 +1,9 @@
+model = "gpt-5-codex"
+sandbox_mode = "workspace-write"
+
+otel.environment = "root-dotted"
+otel.log_user_prompt = true
+
+[profiles.fast]
+model = "gpt-5-mini"
+otel = "not the root family"

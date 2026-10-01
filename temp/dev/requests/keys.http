@@ -1,0 +1,49 @@
+# Access keys API of the connection page, checked by hand against a running service on
+# http://localhost:8080.
+#
+# Before: the database migrated (task migrate:up) and the first user created from
+# HT_BOOTSTRAP_EMAIL, HT_BOOTSTRAP_NAME and HT_BOOTSTRAP_PASSWORD of .env
+# (task user:create-first).
+#
+# The requests below run in an HTTP client that reads .env (VS Code REST Client) and keeps
+# the cookies between requests. The same scenario with curl and jq, from the repository
+# root; it prints statuses, codes and the shape of the answers only, never a key:
+#
+# $ set -a; . ./.env; set +a; jar="$(mktemp)"; body="$(mktemp)"
+# $ api=http://localhost:8080/api; origin='Origin: http://localhost:8080'; json='Content-Type: application/json'
+# $ curl -sS -o "$body" -w 'keys without session %{http_code} ' "$api/me/keys"; jq -r .code "$body"
+# $ curl -sS -o /dev/null -w 'login %{http_code}\n' -c "$jar" -X POST "$api/auth/login" -H "$origin" -H "$json" -d "{\"email\":\"$HT_BOOTSTRAP_EMAIL\",\"password\":\"$HT_BOOTSTRAP_PASSWORD\"}"
+# $ curl -sS -o "$body" -w 'issue mcp key %{http_code} ' -b "$jar" -X POST "$api/me/keys/mcp" -H "$origin"; jq -c '{key: (.key | length > 0), mcpUrl, serverName}' "$body"
+# $ curl -sS -o "$body" -w 'keys %{http_code} ' -b "$jar" "$api/me/keys"; jq -c '{mcp: .mcp.active, mcpCreated: (.mcp.createdAt != null), ingest: .ingest.active}' "$body"
+# $ curl -sS -o "$body" -w 'reissue ingest token %{http_code}\n' -b "$jar" -X POST "$api/me/keys/ingest/reissue" -H "$origin"; test ! -s "$body" && echo 'no body'
+# $ curl -sS -o "$body" -w 'keys after reissue %{http_code} ' -b "$jar" "$api/me/keys"; jq -c '{ingest: .ingest.active}' "$body"
+# $ curl -sS -o /dev/null -w 'revoke mcp key %{http_code}\n' -b "$jar" -X DELETE "$api/me/keys/mcp" -H "$origin"
+# $ curl -sS -o "$body" -w 'revoke again %{http_code} ' -b "$jar" -X DELETE "$api/me/keys/mcp" -H "$origin"; jq -r .code "$body"
+# $ curl -sS -o "$body" -w 'keys after revoke %{http_code} ' -b "$jar" "$api/me/keys"; jq -c '{mcp: .mcp.active, mcpCreated: .mcp.createdAt}' "$body"
+# $ rm -f "$jar" "$body"
+#
+# Expected: keys without session 401 unauthenticated; login 204; issue mcp key 201 with a
+# key, mcpUrl http://localhost:8080/mcp (HT_PUBLIC_ORIGIN + /mcp) and serverName hottell;
+# keys 200 with the MCP key active; reissue ingest token 204 with no body (the token
+# reaches only the binary, through MCP); keys after reissue 200 with the collector token
+# active; revoke mcp key 204; revoke again 404 access_key_not_found; keys after revoke 200
+# with the MCP key inactive and createdAt null.
+
+@host = http://localhost:8080
+@origin = http://localhost:8080
+# Sign in as the first user with the request of auth.http before these requests.
+
+### The keys: 200 {mcp, ingest}, each {active, createdAt, lastUsedAt}; 401 unauthenticated without a session
+GET {{host}}/api/me/keys
+
+### Issue the MCP key: 201 {key, mcpUrl, serverName}; the key is shown once, the previous one stops working
+POST {{host}}/api/me/keys/mcp
+Origin: {{origin}}
+
+### Reissue the collector token: 204, no body; sending stops on every machine until the binary gets the new token
+POST {{host}}/api/me/keys/ingest/reissue
+Origin: {{origin}}
+
+### Revoke the MCP key: 204; 404 access_key_not_found when there is none
+DELETE {{host}}/api/me/keys/mcp
+Origin: {{origin}}

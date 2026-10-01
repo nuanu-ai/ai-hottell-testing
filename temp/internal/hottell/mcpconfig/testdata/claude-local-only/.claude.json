@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "/Users/u/src/app": {
+      "mcpServers": {
+        "hottell": {
+          "type": "http",
+          "url": "http://localhost:18080/mcp",
+          "headers": { "Authorization": "Bearer ht_mcp_claude_fixture" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$ORCA_PANE_KEY\" ]; then payload=$(cat); printf '%s' \"$payload\" | curl -s -m 2 -X POST --data-binary @- \"http://127.0.0.1:${ORCA_AGENT_HOOK_PORT}/hook?pane=$ORCA_PANE_KEY\" >/dev/null 2>&1 || true; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{BINARY}} -agent codex -config x",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "say done"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{BINARY}} -agent codex"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+# Codex settings of the user.
+model = "gpt-5.5-codex"
+approval_policy = "on-request" # keep asking
+
+[features]
+hooks = true
+
+[mcp_servers.hottell]
+url = "https://hottell.example.test/mcp"
+
+[plugins."github@openai-curated"]
+enabled = true
+
+# Trust the user gave with /hooks.
+[hooks.state."{{CODEX_HOME}}/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:stop:0:0"]
+enabled = false
+
+[hooks.state."github@openai-curated:hooks/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+
+[profiles.fast]
+model = "gpt-5.5-mini"

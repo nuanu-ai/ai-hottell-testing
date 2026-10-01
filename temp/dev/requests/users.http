@@ -1,0 +1,108 @@
+# Users, invitation and password reset API, checked by hand against a running service on
+# http://localhost:8080.
+#
+# Before: the database migrated (task migrate:up) and the first user created from
+# HT_BOOTSTRAP_EMAIL, HT_BOOTSTRAP_NAME and HT_BOOTSTRAP_PASSWORD of .env
+# (task user:create-first).
+#
+# The requests below run in an HTTP client that reads .env (VS Code REST Client) and keeps
+# the cookies between requests. The same scenario with curl and jq, from the repository
+# root; it prints statuses and codes only, never a link, a token or a password:
+#
+# $ set -a; . ./.env; set +a; admin="$(mktemp)"; invited="$(mktemp)"; body="$(mktemp)"
+# $ api=http://localhost:8080/api; origin='Origin: http://localhost:8080'; json='Content-Type: application/json'
+# $ email="invited-$(date +%s)@example.com"
+# $ curl -sS -o /dev/null -w 'admin login %{http_code}\n' -c "$admin" -X POST "$api/auth/login" -H "$origin" -H "$json" -d "{\"email\":\"$HT_BOOTSTRAP_EMAIL\",\"password\":\"$HT_BOOTSTRAP_PASSWORD\"}"
+# $ curl -sS -o "$body" -w 'invite %{http_code}\n' -b "$admin" -X POST "$api/users" -H "$origin" -H "$json" -d "{\"email\":\"$email\",\"name\":\"Приглашённый\"}"
+# $ id="$(jq -r .user.id "$body")"; token="$(jq -r .inviteUrl "$body" | sed 's|.*/invite/||')"; jq -c '{status: .user.status, isMe: .user.isMe}' "$body"
+# $ curl -sS -o "$body" -w 'list %{http_code}\n' -b "$admin" "$api/users"; jq -c --arg id "$id" '[.items[] | {me: .isMe, status, invited: (.id == $id)}]' "$body"
+# $ curl -sS -o "$body" -w 'get invite %{http_code}\n' "$api/invites/$token"; jq -c '{name}' "$body"
+# $ curl -sS -o /dev/null -w 'accept %{http_code}\n' -c "$invited" -X POST "$api/invites/$token/accept" -H "$origin" -H "$json" -d '{"password":"invited password 1"}'
+# $ curl -sS -o "$body" -w 'accept again %{http_code} ' -X POST "$api/invites/$token/accept" -H "$origin" -H "$json" -d '{"password":"invited password 1"}'; jq -r .code "$body"
+# $ curl -sS -o /dev/null -w 'invited me %{http_code}\n' -b "$invited" "$api/me"
+# $ curl -sS -o /dev/null -w 'invited login %{http_code}\n' -X POST "$api/auth/login" -H "$origin" -H "$json" -d "{\"email\":\"$email\",\"password\":\"invited password 1\"}"
+# $ curl -sS -o "$body" -w 'issue reset %{http_code}\n' -b "$admin" -X POST "$api/users/$id/password-reset" -H "$origin"
+# $ token="$(jq -r .resetUrl "$body" | sed 's|.*/reset/||')"
+# $ curl -sS -o "$body" -w 'get reset %{http_code}\n' "$api/password-resets/$token"; jq -c '{name}' "$body"
+# $ curl -sS -o /dev/null -w 'complete reset %{http_code}\n' -X POST "$api/password-resets/$token/complete" -H "$origin" -H "$json" -d '{"password":"invited password 2"}'
+# $ curl -sS -o /dev/null -w 'invited me after reset %{http_code}\n' -b "$invited" "$api/me"
+# $ curl -sS -o /dev/null -w 'old password %{http_code}\n' -X POST "$api/auth/login" -H "$origin" -H "$json" -d "{\"email\":\"$email\",\"password\":\"invited password 1\"}"
+# $ curl -sS -o /dev/null -w 'new password %{http_code}\n' -X POST "$api/auth/login" -H "$origin" -H "$json" -d "{\"email\":\"$email\",\"password\":\"invited password 2\"}"
+# $ rm -f "$admin" "$invited" "$body"; unset token
+#
+# Expected: admin login 204; invite 201 with status invited and isMe false; list 200 with
+# the admin as isMe true and the invited user as status invited; get invite 200 with the
+# name; accept 204 and the invited user signed in; accept again 410 link_used; invited me
+# 200; invited login 204; issue reset 200; get reset 200; complete reset 204; the session
+# the invited user opened before the reset 401 (every session of the user is closed);
+# old password 401; new password 204.
+
+@host = http://localhost:8080
+@origin = http://localhost:8080
+# Sign in as the first user with the request of auth.http before the users page requests.
+
+### The users: 200 {items: [UserListItem]}; the signed-in user has isMe true
+GET {{host}}/api/users
+
+### Invite: 201 {user, inviteUrl, expiresAt}; 400 invalid_email or invalid_name; 409 email_taken
+# @name invite
+POST {{host}}/api/users
+Origin: {{origin}}
+Content-Type: application/json
+
+{"email": "invited@example.com", "name": "Приглашённый"}
+
+###
+@userId = {{invite.response.body.$.user.id}}
+# The link tokens are asked for when a request needs them (@prompt), so none is ever
+# written into this file.
+
+### Reissue the invitation: 200 {inviteUrl, expiresAt}, the previous link stops working; 409 user_not_invited
+POST {{host}}/api/users/{{userId}}/invite
+Origin: {{origin}}
+
+### The invitation: 200 {email, name}; 404 link_not_found; 410 link_used or link_expired
+# @prompt inviteToken The part of inviteUrl after /invite/
+GET {{host}}/api/invites/{{inviteToken}}
+
+### Accept the invitation: 204 and Set-Cookie ht_session of the invited user
+# @prompt inviteToken The part of inviteUrl after /invite/
+POST {{host}}/api/invites/{{inviteToken}}/accept
+Origin: {{origin}}
+Content-Type: application/json
+
+{"password": "invited password 1"}
+
+### Sign in as the invited user: 204
+POST {{host}}/api/auth/login
+Origin: {{origin}}
+Content-Type: application/json
+
+{"email": "invited@example.com", "password": "invited password 1"}
+
+### Sign in as the first user again to issue the reset: 204
+POST {{host}}/api/auth/login
+Origin: {{origin}}
+Content-Type: application/json
+
+{"email": "{{$dotenv HT_BOOTSTRAP_EMAIL}}", "password": "{{$dotenv HT_BOOTSTRAP_PASSWORD}}"}
+
+### Issue a password reset link: 200 {resetUrl, expiresAt}; 409 user_not_active or cannot_reset_self
+POST {{host}}/api/users/{{userId}}/password-reset
+Origin: {{origin}}
+
+### The reset link: 200 {email, name}; 404 link_not_found; 410 link_used or link_expired
+# @prompt resetToken The part of resetUrl after /reset/
+GET {{host}}/api/password-resets/{{resetToken}}
+
+### Set a new password: 204 and Set-Cookie ht_session; every other session of the user is closed
+# @prompt resetToken The part of resetUrl after /reset/
+POST {{host}}/api/password-resets/{{resetToken}}/complete
+Origin: {{origin}}
+Content-Type: application/json
+
+{"password": "invited password 2"}
+
+### Revoke an invitation: 204 for an invited user; 409 user_not_invited for this one, who accepted
+DELETE {{host}}/api/users/{{userId}}
+Origin: {{origin}}

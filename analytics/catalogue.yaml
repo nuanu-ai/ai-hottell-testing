@@ -1,0 +1,285 @@
+# Каталог детекторов MVP · draft 29.09.2026
+# Поля и нормализация — analytics/model.md; метрики и затраты — analytics/metrics.md.
+# Детектор находит подозрительный эпизод (status: suspected); ошибкой его делает подтверждение (confirmed).
+# В агрегаты, ранжирование и предложения идут только confirmed.
+# layer: structural — считает ядро по данным; turn — считает ядро по результатам быстрого разбора ходов (analytics/quick-review.md);
+#        semantic — считает глубокий разбор (skill session-retro) по сессии целиком.
+# Параметры — стартовые значения, калибруются по доле dismissed на реальном корпусе.
+
+version: 0.1
+common:
+  severity_levels: [low, medium, high]
+  severity_up_if: "вердикт сессии failed"
+  cost_estimate_flag: "если токены на уровне хода недоступны, затраты считаются как доля токенов сессии по числу вызовов и помечаются estimate"
+
+detectors:
+
+  - id: D03
+    name: Повтор без прогресса
+    question: 2
+    layer: structural
+    inputs: [ToolCall, HumanTurn]
+    signal: >
+      В одной сессии ≥ min_repeats вызовов с одинаковым input_exact_hash (тот же вызов над тем же объектом)
+      в пределах window_calls вызовов,
+      у всех одинаковая сигнатура ошибки или одинаковый результат, и между соседними повторами нет прогресса.
+    progress: >
+      Прогресс — любое из: успешный вызов is_edit; реплика человека; изменение input_exact_hash у того же инструмента,
+      после которого результат изменился.
+    exclusions:
+      - вызовы is_wait (ожидание, опрос статуса, backoff)
+      - вызовы над разными объектами: input_hash совпадает, input_exact_hash — нет (разные заявки, операции)
+      - результат меняется между повторами (разный вывод без ошибки)
+      - сигнатура ошибки класса среды (auth, rate_limit, network, permission, dependency) → это D07 или D24
+    params: {min_repeats: 3, window_calls: 10}
+    evidence: "call_id всех повторов; первая и последняя реплика вокруг"
+    cost: "токены ходов от второго повтора до последнего; минуты = ended_at последнего − started_at второго"
+    severity: "medium; high при ≥ 2 × min_repeats или severity_up_if"
+    action: {class: hook, target: "PreToolUse: при повторе без прогресса — подсказка агенту «опиши, что меняешь, или доложи»"}
+    alt_actions: ["skill: порядок диагностики для этого инструмента"]
+    verify: {metric: repeat_no_progress_share, better: lower}
+    acceptance: [D03-P1, D03-N1, D03-N2, D03-N3, D03-N4]
+
+  - id: D07
+    name: Каскад ошибок среды
+    question: 2
+    layer: structural
+    inputs: [ToolCall]
+    signal: >
+      В одной сессии ≥ min_errors вызовов с error_class среды (auth, rate_limit, network, permission, dependency, not_found)
+      одного класса, либо ≥ 2 таких ошибок среди первых early_calls вызовов.
+    exclusions:
+      - вызовы MCP-серверов → D24
+      - ошибка, за которой следующий вызов того же инструмента успешен (немедленное восстановление)
+      - серия ошибок rate_limit с растущими паузами, закончившаяся успехом (обработанный backoff)
+    params: {min_errors: 3, early_calls: 5}
+    evidence: "call_id ошибок; первый успешный вызов после серии"
+    cost: "вызовы и ходы от первой ошибки среды до первого успеха того же инструмента или до конца сессии"
+    severity: "medium; high если ошибки в ≥ 2 сессиях участника за 7 дней"
+    action: {class: script, target: "проверка среды на старте сессии: ключи, права, зависимости"}
+    alt_actions: ["hook: allowlist разрешений", "human: починить среду один раз"]
+    verify: {metric: env_error_share, better: lower}
+    acceptance: [D07-P1, D07-N1]
+
+  - id: D24
+    name: Неработающий MCP
+    question: 2
+    layer: structural
+    inputs: [ToolCall]
+    signal: >
+      Вызовы одного mcp_server с error_class auth, rate_limit или network: ≥ min_errors в сессии,
+      либо ≥ 1 в каждой из ≥ min_sessions сессий участника за period_days;
+      и после первой ошибки агент обращается к этому серверу ещё хотя бы раз.
+    exclusions:
+      - единичная ошибка rate_limit, за которой вызов того же сервера успешен
+    params: {min_errors: 3, min_sessions: 2, period_days: 7}
+    evidence: "mcp_server; call_id ошибок; session_ids"
+    cost: "вызовы сервера после первой ошибки и ходы агента между ними"
+    severity: "high — затраты без результата и риск ложных выводов агента"
+    action: {class: settings, target: "обновить ключ или токен MCP-сервера либо отключить его в настройках проекта"}
+    verify: {metric: mcp_error_calls, better: lower, expect: 0}
+    acceptance: [D24-P1, D24-P2, D24-N1]
+
+  - id: D12
+    name: Агент забыл сказанное
+    question: 2
+    layer: structural
+    inputs: [Compaction, ToolCall, AgentTurn, HumanTurn, TurnReview]
+    signal: >
+      (a) В пределах after_turns ходов после компакции повторяется сигнатура ошибки, которая до компакции была
+      исправлена (после неё был успешный вызов того же инструмента); или (b) в любом месте сессии агент
+      переспрашивает то, на что человек уже ответил, или нарушает указание человека из этой же сессии —
+      (b) находит и подтверждает глубокий разбор.
+    exclusions:
+      - повторное чтение файлов само по себе — не эпизод, учитывается как слабый сигнал при наличии (a) или (b)
+    params: {after_turns: 5}
+    evidence: "исходный ответ, указание или исправление; повтор; компакция, если была"
+    cost: "ходы от повтора до следующего исправления или ответа"
+    severity: "medium; high при ≥ 2 компакциях или ≥ 2 повторах (b) в сессии"
+    action: {class: policy, target: "одна задача — одна сессия; важные указания — в файл задачи или AGENTS.md; subagent для объёмных выводов"}
+    verify: {metric: forgotten_repeats, better: lower}
+    acceptance: [D12-P1, D12-N1, S-FORGOT-*]
+
+  - id: D13
+    name: Выброс затрат
+    question: 2
+    layer: structural
+    inputs: [Task, Episode, Session]
+    signal: >
+      Сначала распределить расход по заданиям с проверяемыми границами. Повторный автоматический
+      запуск внутри агрегированного задания можно считать отдельным эпизодом, только если у него
+      есть собственные начало/конец, исход и непересекающийся расход. Токены задания или такого
+      эпизода > ratio × медианы независимо завершённых сравнимых заданий/запусков класса
+      (baseline после ≥ baseline_min примеров); до baseline — только предварительный сигнал
+      по 90-му перцентилю сопоставимых задач/запусков участника за period_days.
+      Если одна сессия содержит несколько задач и расход нельзя разделить, превышение общей суммы
+      не доказывает выброс конкретного задания.
+    exclusions:
+      - сессии класса new_task с несколькими задачами — сравниваются по задачам, если skill разметил сегменты
+      - несколько запусков одной автоматизации внутри одного чата учитываются раздельно, без общего расхода чата
+    params: {ratio: 2.0, baseline_min: 5, period_days: 30}
+    evidence: "границы задания/запуска, его исход и неповторяющиеся usage-счётчики; класс и baseline или перцентиль; исключения"
+    cost: "токены сверх медианы класса"
+    severity: "low; medium при ratio ≥ 3"
+    action: {class: diagnosis, target: "проверить причину выброса на сопоставимых заданиях/запусках и исключить рост объёма работы, сбои среды и повторный счёт usage"}
+    alt_actions: ["разделить контекст по заданиям только если подтверждено, что именно он создаёт лишний расход"]
+    verify: {metric: tokens_per_verified, better: lower}
+    acceptance: [D13-P1, D13-P2, D13-N1]
+
+  - id: D16
+    name: Простой на человеке
+    question: 2
+    layer: structural
+    inputs: [AgentTurn, HumanTurn, Permission, TurnReview.ends_with_question]
+    signal: >
+      (a) после первой реплики ≥ min_questions ходов агента заканчиваются вопросом человеку, и за каждым
+      ожидание ответа ≥ wait_min минут — вопросы задаются по одному; или (b) суммарное ожидание решений
+      по разрешениям ≥ permission_wait_total_min минут.
+    exclusions:
+      - вопросы собраны в одном сообщении
+      - длинная пауза после хода без вопроса — человек отошёл
+    params: {min_questions: 3, wait_min: 2, permission_wait_total_min: 5}
+    evidence: "ходы с вопросами и ответы; запросы разрешений и решения"
+    cost: "минуты ожидания"
+    severity: "low; medium при ожидании ≥ 15 минут за сессию"
+    action: {class: policy, target: "вопросы пакетом до старта работы"}
+    alt_actions: ["hook: автоматическое разрешение безопасных команд"]
+    verify: {metric: waits_per_session_min, better: lower}
+    acceptance: [D16-P1, D16-P2, D16-N1]
+
+  - id: D22
+    name: Не тот класс работы
+    question: 3
+    layer: structural
+    inputs: [Task, Session, ToolCall, Verdict, Facets]
+    signal: >
+      ≥ min_sessions независимо завершённых Task с вердиктом verified из разных session_id и одним узким
+      контрактом операции (вход, результат, исключения). Для этих Task последовательности вызовов похожи:
+      Jaccard по 3-граммам шагов (tool + глагол команды; одинаковые шаги подряд схлопываются) ≥ similarity
+      для каждой пары, а коэффициент вариации токенов по Task ≤ token_cv. Повтор общей темы работы
+      без общего контракта операции не доказывает пригодность скрипта.
+    exclusions:
+      - задания с вердиктом partial, failed, unknown
+      - повторы внутри одной сессии не считаются независимыми для порога min_sessions
+    params: {min_sessions: 3, similarity: 0.8, token_cv: 0.3}
+    evidence: "session_ids и task_ids; узкий контракт; общая последовательность шагов; токены заданий"
+    cost: "токены сравнимых заданий группы — кандидат на экономию, подтверждается после перевода"
+    severity: "medium"
+    action: {class: script, target: "скрипт или workflow с моделью только для исключений; шаги — из общей последовательности"}
+    verify: {metric: cost_per_run, better: lower, guard: "доля verified не ниже"}
+    acceptance: [D22-P1, D22-N1]
+
+  - id: D01
+    name: Постановка задачи
+    question: 1
+    layer: turn
+    inputs: [TurnReview, AgentTurn, ToolCall]
+    signal: >
+      Среди первых early_turns реплик после постановки есть реплика класса correction или clarification.
+      Отдельно отмечается: в постановке нет критерия готовности.
+    exclusions:
+      - goal_change, new_task, ack
+      - answer на вопрос агента, заданный до начала работы, — это нормальное уточнение, если вопросы собраны вместе
+    params: {early_turns: 3}
+    evidence: "постановка; реплика; действие агента, которое она исправляет"
+    cost: "от действия агента, которое исправляет correction, до реплики; для clarification — ходы, сделанные до неё впустую"
+    severity: "correction — medium, clarification — low; high при повторе в ≥ 2 сессиях одного класса"
+    action: {class: policy, target: "шаблон постановки для класса задачи с критерием готовности"}
+    alt_actions: ["skill: вопросы до старта для класса задачи", "если correction ссылается на правило из AGENTS.md → D26"]
+    verify: {metric: early_correction_share, better: lower}
+    acceptance: [S-TURN-*]
+
+  - id: D05
+    name: «Готово» без подтверждения
+    question: 2
+    layer: turn
+    inputs: [Task, TurnReview, Verdict]
+    signal: "Каждое существенное claims_done внутри задания: на момент заявления агент объявил согласованный объём завершённым, но его проверка отсутствует или противоречит исходным данным. Позднее исправление сохраняется отдельно и не стирает ранний сигнал."
+    exclusions:
+      - агент прямо пишет, что сделано частично или что нужна проверка человеком
+    evidence: "строка каждого заявления, границы задания, доступная на тот момент проверка и последующее исправление"
+    cost: "повторное открытие задачи и доработка, если они есть в разметке или следующих сессиях"
+    severity: "medium; high при failed"
+    action: {class: hook, target: "Stop: перед завершением — блок доказательств по пунктам критерия готовности"}
+    alt_actions: ["policy: критерий готовности в постановке"]
+    verify: {metric: unsupported_claims_share, better: lower}
+    acceptance: [S-CLAIM-*]
+
+  - id: D10
+    name: Повторяющаяся инструкция
+    question: 1
+    layer: semantic
+    inputs: [TurnReview.instruction]
+    signal: >
+      Императив человека о способе работы (не о содержании конкретной задачи) повторяется по смыслу
+      в ≥ min_sessions сессиях участника за period_days (сходство ≥ similarity).
+    exclusions:
+      - инструкции о содержании задачи: суммы, даты, имена, конкретные файлы
+    params: {min_sessions: 2, period_days: 30, similarity: 0.85}
+    evidence: "реплики с инструкцией в каждой сессии"
+    cost: "реплики с инструкцией и ходы, переделанные после неё"
+    severity: "medium; high если правило уже есть в настройках — тогда это D26"
+    action: {class: review, target: "сначала проверить действующее правило; устойчивое личное предпочтение — персонализация, постоянное ограничение проекта — AGENTS.md"}
+    alt_actions: ["hook, если правило обязательно"]
+    verify: {metric: instruction_repeats, better: lower, expect: 0}
+    acceptance: [S-INSTR-*]
+
+  - id: D19
+    name: Пропущенный skill
+    question: 2
+    layer: semantic
+    inputs: [ConfigItem, Facets, SkillUse, Session]
+    signal: >
+      Среди установленных skills участника есть подходящий задаче сессии (skill сравнивает задачу с description),
+      в сессии нет SkillUse этого skill, и затраты сессии выше медианы сессий того же класса, где он использовался.
+      Без сессий с использованием — кандидат с низкой уверенностью.
+    exclusions:
+      - человек явно попросил работать без skill
+      - skill не установлен для этого агента
+    evidence: "skill и его description; задача сессии; сравнение затрат"
+    cost: "разница с медианой сессий с этим skill"
+    severity: "low; medium при повторе в ≥ 2 сессиях"
+    action: {class: skill, target: "переписать description фразами из реальных постановок"}
+    alt_actions: ["policy: «для задач этого класса используй skill X»"]
+    verify: {metric: skill_use_share_in_class, better: higher}
+    acceptance: [S-SKILL-*]
+
+  - id: D25
+    name: Skill без результата
+    question: 2
+    layer: semantic
+    inputs: [SkillUse, Episode, Verdict]
+    signal: >
+      После SkillUse до следующей реплики человека или конца сессии есть подтверждённые эпизоды либо вердикт
+      partial или failed; повторяется для того же skill в ≥ min_sessions сессиях.
+    exclusions:
+      - эпизоды D07 и D24, не связанные с шагами skill
+      - skill применяли к самым трудным случаям класса: сравнивать с сессиями той же сложности, а не со всеми
+    params: {min_sessions: 2}
+    evidence: "skill; сессии; эпизоды на участке после активации"
+    cost: "затраты участка после активации"
+    severity: "medium; high если skill используется командой"
+    action: {class: skill, target: "исправить шаг skill, на котором он сбивается, или сузить, когда он срабатывает; в рекомендации — этот шаг и другое возможное объяснение"}
+    alt_actions: ["убрать skill — только если он не помог ни в одной сессии класса за период"]
+    verify: {metric: skill_episode_rate, better: lower}
+    acceptance: [S-SKILL-*]
+
+  - id: D26
+    name: Устаревшие настройки
+    question: 3
+    layer: semantic
+    inputs: [ConfigItem, SkillUse, HumanTurn, Session]
+    signal: >
+      Для элемента настроек любое из: (a) не менялся дольше stale_days, а после изменения в сессиях появилась
+      новая модель или версия агента; (b) skill или MCP-сервер не использовался за unused_days;
+      (c) правило из инструкций противоречит повторяющимся репликам человека или повторяется ими (D10).
+    exclusions:
+      - правило, которое выполняется и не повторяется человеком
+      - редко нужный элемент: неиспользование — повод проверить, а не удалить
+    params: {stale_days: 60, unused_days: 30}
+    evidence: "элемент настроек; даты; модели после изменения; реплики, противоречащие правилу"
+    cost: "не считается; приоритет по числу связанных эпизодов"
+    severity: "low; medium при (c)"
+    action: {class: settings, target: "обновить правило под текущую модель; удалить — правило, которое противоречит вашим репликам; неиспользуемое — сначала спросить, нужно ли"}
+    verify: {metric: stale_config_items, better: lower}
+    acceptance: [S-CONFIG-*]

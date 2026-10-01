@@ -1,0 +1,218 @@
+version: "3"
+
+tasks:
+  check:
+    desc: Run every verification step
+    cmds:
+      - task: generate:check
+      - task: fmt:check
+      - task: vet
+      - task: lint
+      - task: test
+      - task: hottell:scripts:check
+      - task: web:check
+
+  fmt:
+    desc: Format Go code with gofumpt
+    cmds:
+      - golangci-lint fmt
+
+  fmt:check:
+    desc: Fail when Go code is not gofumpt-formatted
+    cmds:
+      - golangci-lint fmt --diff
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: Run golangci-lint and check Go layer boundaries with go-arch-lint
+    cmds:
+      - golangci-lint run
+      - go-arch-lint check
+
+  test:
+    desc: Run Go tests with the race detector
+    cmds:
+      - go test -race ./...
+
+  build:
+    desc: Build the frontend, then bin/api with it embedded and bin/cli, and the hottell binaries
+    cmds:
+      - task: build:web
+      - go build -o bin/ ./cmd/api ./cmd/cli
+      - task: build:hottell
+
+  build:hottell:
+    desc: Build bin/hottell-darwin-arm64 and bin/hottell-darwin-amd64, version from VERSION (default dev+<commit>)
+    cmds:
+      - for: [arm64, amd64]
+        cmd: >-
+          CGO_ENABLED=0 GOOS=darwin GOARCH={{.ITEM}}
+          go build {{if .VERSION}}-ldflags "-X main.version={{.VERSION}}"{{end}}
+          -o bin/hottell-darwin-{{.ITEM}} ./cmd/hottell
+
+  hottell:scripts:check:
+    desc: Check the hottell install and release scripts with shellcheck and run their tests against local servers
+    cmds:
+      - shellcheck deployments/hottell/*.sh
+      - deployments/hottell/install_test.sh
+      - deployments/hottell/release_test.sh
+
+  release:
+    desc: "Publish the hottell release hottell-vVERSION in Gitea from HEAD of origin/main: both binaries, SHA256SUMS, install.sh; token from GITEA_TOKEN; DRY_RUN=1 prepares bin/release without publishing"
+    requires:
+      vars: [VERSION]
+    preconditions:
+      - sh: echo "{{.VERSION}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+        msg: "VERSION must be X.Y.Z, got {{.VERSION}}"
+      - sh: '[ -n "{{.DRY_RUN}}" ] || [ -z "$(git status --porcelain)" ]'
+        msg: the working tree has changes; a release is built from a clean commit
+      - sh: '[ -n "{{.DRY_RUN}}" ] || { git fetch -q origin main && git merge-base --is-ancestor HEAD origin/main; }'
+        msg: HEAD is not on origin/main; a release is built from a commit already in main
+    cmds:
+      - task: build:hottell
+        vars:
+          VERSION: "{{.VERSION}}"
+      - DRY_RUN="{{.DRY_RUN}}" deployments/hottell/release.sh "{{.VERSION}}" "$(git rev-parse HEAD)" bin "bin/release/hottell-v{{.VERSION}}"
+
+  build:web:
+    desc: Build the frontend into web/dist/app, which bin/api embeds
+    dir: web
+    deps: [web:deps]
+    cmds:
+      - pnpm build
+
+  docker:build:
+    desc: Build the service image harness-telemetry:dev, version from VERSION (default dev)
+    cmds:
+      - docker build -f deployments/Dockerfile --build-arg VERSION={{.VERSION | default "dev"}} -t harness-telemetry:dev .
+
+  up:
+    desc: Start PostgreSQL, apply migrations and run the service on http://localhost:8080
+    cmds:
+      - docker compose up --build
+
+  down:
+    desc: Stop and remove the compose containers; the database volume is kept
+    cmds:
+      - docker compose down
+
+  dev:
+    desc: "Development mode: run:api on :8080 and run:web with hot reload on http://localhost:5173, in parallel"
+    deps: [run:api, run:web]
+
+  run:api:
+    desc: Run the API service
+    dotenv: [".env"]
+    cmds:
+      - go build -o bin/api ./cmd/api
+      # exec, not go run: go run exits 1 on Ctrl+C regardless of the service's own exit code
+      - exec ./bin/api
+
+  migrate:up:
+    desc: Apply every pending migration to HT_DATABASE_URL
+    dotenv: [".env"]
+    cmds:
+      - go run ./cmd/cli migrate up
+
+  migrate:down:
+    desc: Roll back the latest applied migration of HT_DATABASE_URL
+    dotenv: [".env"]
+    cmds:
+      - go run ./cmd/cli migrate down
+
+  migrate:status:
+    desc: Show the migration status of HT_DATABASE_URL
+    dotenv: [".env"]
+    cmds:
+      - go run ./cmd/cli migrate status
+
+  user:create-first:
+    desc: Create the first user from HT_BOOTSTRAP_EMAIL, HT_BOOTSTRAP_NAME and HT_BOOTSTRAP_PASSWORD, unless it exists
+    dotenv: [".env"]
+    cmds:
+      - go build -o bin/cli ./cmd/cli
+      # exec, not go run: go run turns every failure into exit status 1 and prints it
+      - exec ./bin/cli user create-first
+
+  user:set-password:
+    desc: Set HT_USER_PASSWORD for the user HT_USER_EMAIL and close every session of the user
+    dotenv: [".env"]
+    cmds:
+      - go build -o bin/cli ./cmd/cli
+      # exec, not go run: go run turns every failure into exit status 1 and prints it
+      - exec ./bin/cli user set-password
+
+  run:web:
+    desc: Run the Vite dev server on http://localhost:5173
+    dir: web
+    deps: [web:deps]
+    cmds:
+      - pnpm dev
+
+  web:deps:
+    desc: Install frontend dependencies from the lockfile
+    dir: web
+    sources:
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+    generates:
+      - node_modules/.modules.yaml
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  e2e:
+    desc: "Browser tests: start the isolated stand ht-e2e on http://localhost:18080, run Playwright, remove the stand"
+    deps: [web:deps]
+    dotenv: ["web/e2e/.env.e2e"]
+    vars:
+      COMPOSE: docker compose -p ht-e2e -f compose.yaml -f compose.e2e.yaml
+    cmds:
+      - pnpm --dir web exec playwright install chromium
+      - defer: "{{.COMPOSE}} down -v"
+      - "{{.COMPOSE}} up -d --build"
+      - cmd: |
+          for _ in $(seq 60); do
+            curl -fsS -o /dev/null http://localhost:18080/readyz && exit 0
+            sleep 1
+          done
+          echo "the stand is not ready at http://localhost:18080/readyz after 60 s" >&2
+          exit 1
+      - "{{.COMPOSE}} run --rm -e HT_BOOTSTRAP_EMAIL -e HT_BOOTSTRAP_NAME -e HT_BOOTSTRAP_PASSWORD migrate user create-first"
+      - pnpm --dir web e2e
+
+  web:check:
+    desc: "Frontend verification: format, lint with boundaries, types, tests, build"
+    dir: web
+    deps: [web:deps]
+    cmds:
+      - pnpm format:check
+      - pnpm lint
+      - pnpm typecheck
+      - pnpm test
+      - pnpm build
+
+  generate:
+    desc: Regenerate generated code
+    deps: [web:deps]
+    cmds:
+      - go generate ./...
+      - oapi-codegen -config internal/delivery/http/openapi/config.yaml api/openapi/openapi.yaml
+      # mockgen mocks of the application ports, from their //go:generate lines
+      - go generate ./...
+      - pnpm --dir web generate:api
+
+  generate:check:
+    desc: Fail when the tree is dirty after task generate
+    cmds:
+      - task: generate
+      - cmd: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "tree is dirty after task generate: regenerate and commit, or commit pending changes" >&2
+            git status --short >&2
+            exit 1
+          fi

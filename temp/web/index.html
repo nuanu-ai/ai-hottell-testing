@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Телеметрия агентов</title>
+    <script>
+      // Theme is set before the first paint, otherwise the dark default flashes light.
+      // Copy of initialTheme in src/shared/lib/theme.ts; theme.test.ts checks they agree.
+      (function () {
+        var theme = 'dark';
+        try {
+          if (localStorage.getItem('ht-theme') === 'light') theme = 'light';
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>

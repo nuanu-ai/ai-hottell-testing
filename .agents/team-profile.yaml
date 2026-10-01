@@ -1,0 +1,52 @@
+# Repository profile for the team-skills process skills.
+# Contract: skills/agents-developer/profile-contract.md (team-skills package).
+#
+# `linear` is a known kind: operations, states and capabilities come from
+# skills/agents-taskmanager/adapters/linear.yaml. Only identity and deviations are declared here.
+version: 1
+
+tracker:
+  kind: linear
+  team_key: MER
+  project: "ai-hottell"                                 # P-MER-14, the ONE project this repository writes to
+  project_id: "de70f79d-b9cf-46f6-a9b9-a11308c60db6"    # the form `get` returns as `projectId`
+  id_pattern: "MER-\\d+"
+  # A card's phase is a label of the workspace's `phase` group (singleSelect). A closed card
+  # carries no working phase label, so `done` maps to none.
+  phase_labels:
+    accepted: accepted
+    designing: designing
+    implementing: implementing
+    reviewing: reviewing
+    awaiting_verification: awaiting-verification
+    done: none
+
+workflow:
+  small_change: >-
+    A wording or configuration fix that changes no behaviour: a typo, a clarification of something
+    already in force, a link, a config value with an obvious reading. The short path skips the spec
+    and the plan; the branch and the gate are never skipped.
+
+surfaces:
+  ui: []
+  performance_sensitive: []
+
+review:
+  mode: gate-only
+  design_skill: none
+  design_checklist: none
+
+integration:
+  kind: pull-request
+  base: camp
+  protected: camp               # a merge into camp takes a fresh word from the owner
+  pr_merge_method: squash
+  review: { required: true, kind: branch-gate, matrix_skills: ["architect"] }
+  # `matrix_skills` is PARKED under gate-only: nobody dispatches it, it keeps the reviewer set a
+  # matrix regime would return to.
+
+gate: { kind: codex-gates, skill: "codex-gates:codex-review" }
+
+docs:
+  always_loaded: "AGENTS.md"
+  status_record: none

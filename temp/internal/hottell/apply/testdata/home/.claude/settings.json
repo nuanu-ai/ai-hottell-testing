@@ -1,0 +1,19 @@
+{
+  "model": "opus",
+  "env": {
+    "FOO": "bar"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/bin/guard.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+[hooks.state."{{CODEX_HOME}}/hooks.json:user_prompt_submit:0:0"]
+enabled = false # the user turned hottell off here
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:session_end:0:0"]
+trusted_hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000" # stale

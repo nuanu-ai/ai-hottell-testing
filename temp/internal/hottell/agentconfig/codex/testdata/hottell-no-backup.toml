@@ -1,0 +1,6 @@
+model = "gpt-5-codex"
+
+[otel]
+# Written by hottell, which owns the whole [otel] family; hottell uninstall restores the previous one.
+environment = "hottell"
+metrics_exporter = "none"

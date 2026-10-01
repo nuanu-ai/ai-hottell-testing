@@ -1,0 +1,21 @@
+{
+ "kind": "deep",
+ "session_id": "00000000-0000-4000-8000-00000000000a",
+ "task": "Сверить выдуманный склад.",
+ "outcome": "partial",
+ "outcome_basis": "Частично (L40).",
+ "model_opinion": "—",
+ "observations": [],
+ "recommendations": [
+  {
+   "action": "Черновик v1 про поставки",
+   "target": "Шаблон поставки",
+   "change": "Добавить поле.",
+   "evidence": [
+    "L20"
+   ],
+   "status": "draft"
+  }
+ ],
+ "unknowns": []
+}

@@ -1,0 +1,51 @@
+# Deny settings API of the "what to send" page, checked by hand against a running service
+# on http://localhost:8080.
+#
+# Before: the database migrated (task migrate:up) and the first user created from
+# HT_BOOTSTRAP_EMAIL, HT_BOOTSTRAP_NAME and HT_BOOTSTRAP_PASSWORD of .env
+# (task user:create-first).
+#
+# The requests below run in an HTTP client that reads .env (VS Code REST Client) and keeps
+# the cookies between requests. The same scenario with curl and jq, from the repository
+# root; it prints statuses, codes and the shape of the answers only:
+#
+# $ set -a; . ./.env; set +a; jar="$(mktemp)"; body="$(mktemp)"
+# $ api=http://localhost:8080/api; origin='Origin: http://localhost:8080'; json='Content-Type: application/json'
+# $ curl -sS -o "$body" -w 'settings without session %{http_code} ' "$api/me/telemetry-settings"; jq -r .code "$body"
+# $ curl -sS -o /dev/null -w 'login %{http_code}\n' -c "$jar" -X POST "$api/auth/login" -H "$origin" -H "$json" -d "{\"email\":\"$HT_BOOTSTRAP_EMAIL\",\"password\":\"$HT_BOOTSTRAP_PASSWORD\"}"
+# $ curl -sS -o "$body" -w 'settings %{http_code} ' -b "$jar" "$api/me/telemetry-settings"; jq -c '{version, claude: .settings.agents.claude.enabled, backfill: .settings.backfill_history}' "$body"
+# $ v="$(jq .version "$body")"
+# $ curl -sS -o "$body" -w 'save %{http_code} ' -b "$jar" -X PUT "$api/me/telemetry-settings" -H "$origin" -H "$json" -d "{\"settings\":{\"agents\":{\"codex\":{\"enabled\":false}},\"backfill_history\":true},\"expectedVersion\":$v}"; jq -c '{version, codex: .settings.agents.codex.enabled, claude: .settings.agents.claude.enabled, backfill: .settings.backfill_history}' "$body"
+# $ curl -sS -o "$body" -w 'save stale %{http_code} ' -b "$jar" -X PUT "$api/me/telemetry-settings" -H "$origin" -H "$json" -d "{\"settings\":{},\"expectedVersion\":$v}"; jq -r .code "$body"
+# $ curl -sS -o "$body" -w 'save invalid %{http_code} ' -b "$jar" -X PUT "$api/me/telemetry-settings" -H "$origin" -H "$json" -d "{\"settings\":{\"agents\":{\"claude\":{\"hook_events\":{\"denied\":[\"NoSuchEvent\"]}}}},\"expectedVersion\":$((v + 1))}"; jq -c '{code, detail}' "$body"
+# $ curl -sS -o "$body" -w 'reset %{http_code} ' -b "$jar" -X PUT "$api/me/telemetry-settings" -H "$origin" -H "$json" -d "{\"settings\":{},\"expectedVersion\":$((v + 1))}"; jq -c '{version, codex: .settings.agents.codex.enabled, backfill: .settings.backfill_history}' "$body"
+# $ rm -f "$jar" "$body"
+#
+# Expected: settings without session 401 unauthenticated; login 204; settings 200 with the
+# version (0 before the first save) and every field, defaults included; save 200 with the
+# version one up, Codex off, Claude still on and backfill on; save stale 409
+# settings_version_conflict; save invalid 422 invalid_telemetry_settings with detail
+# agents.claude.hook_events.denied[0]: unknown hook event "NoSuchEvent"; reset 200 with the
+# version two up and every field back to its default.
+
+@host = http://localhost:8080
+@origin = http://localhost:8080
+# Sign in as the first user with the request of auth.http before these requests.
+
+### The settings: 200 {settings, version}, settings in full form; 401 unauthenticated without a session
+GET {{host}}/api/me/telemetry-settings
+
+### Save the settings read at version 0: 200 {settings, version} with the version one up;
+### 409 settings_version_conflict when they are no longer at expectedVersion
+PUT {{host}}/api/me/telemetry-settings
+Origin: {{origin}}
+Content-Type: application/json
+
+{"settings": {"agents": {"codex": {"enabled": false}}, "backfill_history": true}, "expectedVersion": 0}
+
+### Settings that break the schema: 422 invalid_telemetry_settings with detail telling where and why
+PUT {{host}}/api/me/telemetry-settings
+Origin: {{origin}}
+Content-Type: application/json
+
+{"settings": {"agents": {"claude": {"hook_events": {"denied": ["NoSuchEvent"]}}}}, "expectedVersion": 1}

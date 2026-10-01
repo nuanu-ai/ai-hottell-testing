@@ -1,0 +1,36 @@
+[hooks.state."{{CODEX_HOME}}/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:8ea4304193db3c326c7507beb698a06d0a09b071d059eeaea044ff263d135c57"
+enabled = false # the user turned hottell off here
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:session_end:0:0"]
+trusted_hash = "sha256:428d22d17805d0ee35836a4bd2df8ed8b6aab0fa0c175c7795bd0dc8da98dd50" # stale
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:interrupt:0:0"]
+trusted_hash = "sha256:db9c966e5750fd1ae831db837104c669e6d227c817907032d3844f054f80b0d1"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:permission_request:0:0"]
+trusted_hash = "sha256:232dcd2b855962b398b1b23e98937a319b998009b37e8cd3d23322eb1167add3"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:post_compact:0:0"]
+trusted_hash = "sha256:7b323b97a726a94c9daba74cf6a3e3fbef97cde8fb2658a766249582c9c8cd75"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:8c58c0c934ac636d4fd021f963ad67cb85202ec755f72b90698b72dcb206dde1"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:61982404bd0eb18c913ebbea706b1376253ebf22c9e9e891d4d3bb67b2af618c"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:3a0913cd91862bfea1054a998a1137574408992cd0deb95dc651ee7ca3c23698"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:8db375fcd5e3b3aebf8c15c50c26d38f597a7c5edb33c84db030b1a57ee2ef70"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:stop:0:0"]
+trusted_hash = "sha256:3c3dd83fdf94e6c49284231cfcc3e4be7502d2e5302f1f64e88eaf66d34855b7"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:subagent_start:0:0"]
+trusted_hash = "sha256:51c3852d57ee3495c05d9c77f31ffe66948ce7979a8834f40938338a7c9d7054"
+
+[hooks.state."{{CODEX_HOME}}/hooks.json:subagent_stop:0:0"]
+trusted_hash = "sha256:176254f302e6de31aeac62b85a8f6e9baa21f3dceb98605870421a2dc26f06f3"

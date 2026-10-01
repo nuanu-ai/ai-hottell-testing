@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "PreToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "Notification": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "SubagentStop": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "PreCompact": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "SessionStart": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "hottell -agent claude"}]}]
+  }
+}

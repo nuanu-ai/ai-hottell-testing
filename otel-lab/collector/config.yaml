@@ -1,0 +1,78 @@
+# Приём OTLP от агентов -> редакция секретов -> ClickHouse.
+# Логи (события агентов) и метрики. Трейсы Claude Code (beta) принимаются тем же путём.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  bearertokenauth:
+    scheme: Bearer
+    filename: /run/secrets/otel_lab_ingest_token   # один токен, одна строка
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        auth:
+          authenticator: bearertokenauth
+      # gRPC не открываем: Claude Code и Codex умеют otlp/http, edge проксирует HTTP.
+
+processors:
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 384
+    spike_limit_mib: 96
+  # Кто прислал: тег машины из заголовка/ресурса агента остаётся как есть
+  # (service.name = claude-code | codex, host.name задаёт агент).
+  redaction:
+    allow_all_keys: true
+    # Всё, что похоже на ключи и токены, маскируется до записи.
+    blocked_values:
+      - "(?i)(sk|pk)-[a-z0-9_-]{16,}"
+      - "(?i)ghp_[a-z0-9]{20,}"
+      - "(?i)glpat-[a-z0-9_-]{20,}"
+      - "(?i)xox[baprs]-[a-z0-9-]{10,}"
+      - "(?i)AKIA[0-9A-Z]{16}"
+      - "(?i)bearer\\s+[a-z0-9._-]{16,}"
+      - "-----BEGIN [A-Z ]*PRIVATE KEY-----"
+    summary: info
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  clickhouse:
+    # 🔴 Точка в конце имени обязательна: без неё резолвер, не найдя службу в DNS
+    # Docker (например, пока ClickHouse ещё стартует), подставляет домен поиска
+    # alva.dev и попадает на wildcard Cloudflare — с паролем в рукопожатии.
+    # Та же ловушка описана в Server/WORKLOG.md (Huly, nginx).
+    endpoint: tcp://clickhouse.:9000?dial_timeout=10s
+    database: otel
+    username: default
+    password: ${file:/run/secrets/otel_lab_ch_password}
+    ttl: 240h            # 10 суток: 5 дней сбора + запас на разбор
+    create_schema: true  # таблицы otel_logs, otel_traces, otel_metrics_* создаёт сам
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+  debug:
+    verbosity: basic
+
+service:
+  extensions: [health_check, bearertokenauth]
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, redaction, batch]
+      exporters: [clickhouse]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [clickhouse]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, redaction, batch]
+      exporters: [clickhouse]

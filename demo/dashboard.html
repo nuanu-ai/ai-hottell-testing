@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Дашборд AI Hottell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap">
+<style>
+/* Layout: IBM Carbon — UI shell header, line tabs, square tiles on a 16px grid; summary first, detail on click. */
+:root {
+  --bg: #f4f4f4; --layer: #ffffff; --layer-2: #f4f4f4; --layer-hover: #e8e8e8; --layer-accent: #e0e0e0; --selected: #e0e0e0;
+  --border: #e0e0e0; --border-strong: #8d8d8d;
+  --text: #161616; --text-2: #525252; --text-3: #6f6f6f; --on-color: #ffffff;
+  --interactive: #0f62fe; --interactive-hover: #0050e6; --link: #0f62fe; --focus: #0f62fe;
+  --shell: #161616; --shell-text: #f4f4f4; --shell-2: #c6c6c6; --shell-border: #393939;
+  --error: #da1e28; --success: #24a148; --warning: #f1c21b; --caution: #ff832b; --flag-bg: #fff2e8;
+  --tag-gray-bg: #e0e0e0; --tag-gray: #393939; --tag-blue-bg: #d0e2ff; --tag-blue: #0043ce;
+  --tag-green-bg: #a7f0ba; --tag-green: #0e6027; --tag-red-bg: #ffd7d9; --tag-red: #a2191f;
+  --tag-purple-bg: #e8daff; --tag-purple: #6929c4; --tag-orange-bg: #ffd9be; --tag-orange: #8a3800;
+  --tag-yellow-bg: #fcf4d6; --tag-yellow: #684e00; --tag-teal-bg: #9ef0f0; --tag-teal: #005d5d;
+  --c1: #6929c4; --c2: #1192e8; --c3: #005d5d; --c4: #9f1853;
+  --font: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161616; --layer: #262626; --layer-2: #393939; --layer-hover: #333333; --layer-accent: #393939; --selected: #393939;
+    --border: #393939; --border-strong: #6f6f6f;
+    --text: #f4f4f4; --text-2: #c6c6c6; --text-3: #a8a8a8; --on-color: #ffffff;
+    --interactive: #0f62fe; --interactive-hover: #0353e9; --link: #78a9ff; --focus: #ffffff;
+    --shell: #161616; --shell-text: #f4f4f4; --shell-2: #c6c6c6; --shell-border: #393939;
+    --error: #fa4d56; --success: #42be65; --warning: #f1c21b; --caution: #ff832b; --flag-bg: #3e1a00;
+    --tag-gray-bg: #393939; --tag-gray: #c6c6c6; --tag-blue-bg: #002d9c; --tag-blue: #a6c8ff;
+    --tag-green-bg: #044317; --tag-green: #6fdc8c; --tag-red-bg: #750e13; --tag-red: #ffb3b8;
+    --tag-purple-bg: #491d8b; --tag-purple: #d4bbff; --tag-orange-bg: #5e2900; --tag-orange: #ffb784;
+    --tag-yellow-bg: #483700; --tag-yellow: #fddc69; --tag-teal-bg: #004144; --tag-teal: #3ddbd9;
+    --c1: #8a3ffc; --c2: #33b1ff; --c3: #08bdba; --c4: #ff7eb6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161616; --layer: #262626; --layer-2: #393939; --layer-hover: #333333; --layer-accent: #393939; --selected: #393939;
+  --border: #393939; --border-strong: #6f6f6f;
+  --text: #f4f4f4; --text-2: #c6c6c6; --text-3: #a8a8a8; --on-color: #ffffff;
+  --interactive: #0f62fe; --interactive-hover: #0353e9; --link: #78a9ff; --focus: #ffffff;
+  --shell: #161616; --shell-text: #f4f4f4; --shell-2: #c6c6c6; --shell-border: #393939;
+  --error: #fa4d56; --success: #42be65; --warning: #f1c21b; --caution: #ff832b; --flag-bg: #3e1a00;
+  --tag-gray-bg: #393939; --tag-gray: #c6c6c6; --tag-blue-bg: #002d9c; --tag-blue: #a6c8ff;
+  --tag-green-bg: #044317; --tag-green: #6fdc8c; --tag-red-bg: #750e13; --tag-red: #ffb3b8;
+  --tag-purple-bg: #491d8b; --tag-purple: #d4bbff; --tag-orange-bg: #5e2900; --tag-orange: #ffb784;
+  --tag-yellow-bg: #483700; --tag-yellow: #fddc69; --tag-teal-bg: #004144; --tag-teal: #3ddbd9;
+  --c1: #8a3ffc; --c2: #33b1ff; --c3: #08bdba; --c4: #ff7eb6;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+svg { fill: currentColor; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 14px; line-height: 20px; letter-spacing: .16px;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.mono { font-family: var(--mono); font-size: 12px; letter-spacing: .32px; }
+
+/* UI shell */
+.shell {
+  background: var(--shell); color: var(--shell-text); border-bottom: 1px solid var(--shell-border);
+  padding: env(safe-area-inset-top, 0px) 16px 0;
+}
+.shell-row { max-width: 1312px; margin: 0 auto; min-height: 48px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 8px; font-size: 14px; }
+.brand b { font-weight: 600; letter-spacing: .1px; }
+.brand span { color: var(--shell-2); }
+.shell-right { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-block: 8px; }
+.shell .demo-tag { border: 1px solid #8a3ffc; color: #d4bbff; border-radius: 24px; padding: 2px 10px; font-size: 12px; line-height: 16px; letter-spacing: .32px; }
+.shell .period { color: var(--shell-2); font-size: 12px; letter-spacing: .32px; }
+
+/* Tabs */
+.tabs-wrap { background: var(--layer); border-bottom: 1px solid var(--border); padding-inline: 16px; overflow-x: auto; }
+.tabs { max-width: 1312px; margin: 0 auto; display: flex; gap: 0; }
+.tab {
+  appearance: none; background: none; border: 0; border-bottom: 2px solid var(--border);
+  padding: 12px 16px 10px; color: var(--text-2); cursor: pointer; white-space: nowrap; display: flex; gap: 8px; align-items: center;
+}
+.tab:hover { color: var(--text); background: var(--layer-hover); }
+.tab[aria-selected="true"] { color: var(--text); font-weight: 600; border-bottom-color: var(--interactive); }
+.count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--tag-gray-bg); color: var(--tag-gray); font-size: 12px; line-height: 20px; text-align: center; font-weight: 400; }
+.count.hot { background: var(--interactive); color: var(--on-color); }
+
+/* Page */
+main { padding: 24px 16px 48px; }
+.page { max-width: 1312px; margin: 0 auto; display: grid; gap: 16px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 24px; }
+h1 { font-size: 28px; line-height: 36px; font-weight: 400; margin: 0; letter-spacing: 0; }
+h2 { font-size: 16px; line-height: 22px; font-weight: 600; margin: 0; letter-spacing: 0; }
+h3 { font-size: 14px; line-height: 18px; font-weight: 600; margin: 0; letter-spacing: .16px; }
+.summary { color: var(--text-2); }
+.summary b { color: var(--text); font-weight: 600; }
+.helper { color: var(--text-3); font-size: 12px; line-height: 16px; letter-spacing: .32px; }
+.label { color: var(--text-2); font-size: 12px; line-height: 16px; letter-spacing: .32px; }
+
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.span-8 { grid-column: span 8; } .span-4 { grid-column: span 4; } .span-12 { grid-column: span 12; }
+.span-5 { grid-column: span 5; } .span-7 { grid-column: span 7; }
+@media (max-width: 1055px) { .span-8, .span-4, .span-5, .span-7 { grid-column: span 12; } }
+
+.tile { background: var(--layer); padding: 16px; min-width: 0; }
+.tile-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* Saved time */
+.saved-number { font-size: 54px; line-height: 60px; font-weight: 300; letter-spacing: -.5px; margin: 4px 0 8px; }
+.saved-number .approx { color: var(--text-3); margin-right: 6px; }
+.split { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 16px; }
+.split div { display: grid; gap: 2px; }
+.split strong { font-size: 20px; line-height: 28px; font-weight: 400; }
+.bar { display: flex; height: 16px; gap: 2px; margin-bottom: 12px; }
+.bar i { display: block; height: 100%; }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 24px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.legend .sw { width: 12px; height: 12px; margin-top: 4px; }
+.legend .mins { color: var(--text-2); white-space: nowrap; }
+.legend .off { color: var(--text-3); }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.kv { display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.kv div { display: grid; gap: 2px; min-width: 0; }
+.kv strong { font-weight: 600; }
+
+/* Structured list (inbox) */
+.list { display: grid; }
+.row-btn {
+  appearance: none; border: 0; background: none; text-align: left; cursor: pointer; width: 100%;
+  display: grid; grid-template-columns: 8px minmax(0, 1fr) auto 16px; gap: 12px; align-items: center;
+  padding: 14px 8px 14px 0; border-bottom: 1px solid var(--border);
+}
+.row-btn:hover { background: var(--layer-hover); }
+.row-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; }
+.row-btn .dot.flag { background: var(--caution); }
+.row-btn .n { font-size: 20px; line-height: 28px; font-weight: 400; }
+.row-btn .n.zero { color: var(--text-3); }
+.row-btn svg { fill: var(--text-2); }
+.row-btn .t { display: grid; gap: 2px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { background: var(--layer-accent); text-align: left; font-weight: 600; font-size: 12px; line-height: 16px; letter-spacing: .32px; padding: 12px 16px; white-space: nowrap; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--layer-hover); }
+tr.sel td { background: var(--selected); }
+td .sub { color: var(--text-2); font-size: 12px; line-height: 16px; letter-spacing: .32px; margin-top: 2px; }
+.num { text-align: right; white-space: nowrap; }
+
+/* Tags */
+.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 24px; font-size: 12px; line-height: 16px; letter-spacing: .32px; white-space: nowrap; background: var(--tag-gray-bg); color: var(--tag-gray); }
+.tag.blue { background: var(--tag-blue-bg); color: var(--tag-blue); }
+.tag.green { background: var(--tag-green-bg); color: var(--tag-green); }
+.tag.red { background: var(--tag-red-bg); color: var(--tag-red); }
+.tag.purple { background: var(--tag-purple-bg); color: var(--tag-purple); }
+.tag.orange { background: var(--tag-orange-bg); color: var(--tag-orange); }
+.tag.yellow { background: var(--tag-yellow-bg); color: var(--tag-yellow); }
+.tag.teal { background: var(--tag-teal-bg); color: var(--tag-teal); }
+.tag.outline { background: transparent; border: 1px solid var(--border-strong); color: var(--text-2); }
+.tag.det { font-family: var(--mono); border-radius: 0; background: var(--text); color: var(--bg); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+
+/* Buttons */
+.btn { appearance: none; border: 1px solid transparent; cursor: pointer; min-height: 32px; padding: 5px 15px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 18px; background: var(--interactive); color: var(--on-color); }
+.btn:hover { background: var(--interactive-hover); }
+.btn.ter { background: transparent; color: var(--link); border-color: var(--link); }
+.btn.ter:hover { background: var(--interactive); color: var(--on-color); border-color: var(--interactive); }
+.btn.ghost { background: transparent; color: var(--link); padding-inline: 8px; }
+.btn.ghost:hover { background: var(--layer-hover); }
+.btn.sec { background: var(--text-2); color: var(--bg); }
+.btn.sec:hover { background: var(--text); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Where bad */
+.problem-title { font-weight: 600; }
+.proposal-line { display: grid; gap: 6px; }
+.proposal-line .arrow { color: var(--text-2); }
+
+/* Sessions */
+.agent { display: inline-flex; align-items: center; gap: 6px; }
+.agent i { width: 8px; height: 8px; display: inline-block; }
+.agent.codex i { background: var(--c2); }
+.agent.claude i { background: var(--c4); }
+.detail { display: grid; gap: 16px; align-content: start; }
+.detail-head { display: grid; gap: 6px; }
+.detail-head h2 { font-size: 20px; line-height: 28px; font-weight: 400; }
+.flag-box { background: var(--flag-bg); border-left: 3px solid var(--caution); padding: 12px 16px; display: grid; gap: 10px; }
+.flag-box .q { font-weight: 600; }
+.basis { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.basis li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; }
+.basis .ok { color: var(--success); }
+.basis .no { color: var(--caution); }
+.opinion { color: var(--text-2); font-size: 12px; line-height: 16px; letter-spacing: .32px; }
+
+.turns { display: grid; }
+.turn { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 12px 12px 12px 0; border-bottom: 1px solid var(--border); border-left: 3px solid transparent; }
+.turn.ep-confirmed { border-left-color: var(--error); }
+.turn.ep-pending { border-left: 3px dashed var(--caution); }
+.turn .idx { color: var(--text-3); text-align: right; font-family: var(--mono); font-size: 12px; padding-top: 2px; }
+.turn .body { display: grid; gap: 6px; min-width: 0; }
+.human { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; }
+.cls { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; font-size: 12px; letter-spacing: .32px; border: 1px solid currentColor; white-space: nowrap; }
+.cls.task { color: var(--text-2); }
+.cls.correction { color: var(--error); }
+.cls.clarification { color: var(--caution); }
+.cls.answer { color: var(--link); }
+.cls.goal_change { color: var(--c1); }
+.cls.ack { color: var(--text-3); }
+.cls.low { border-style: dashed; }
+.cls.filled { background: currentColor; }
+.cls.filled span { color: var(--bg); }
+.agent-say { color: var(--text-2); }
+.agent-say code, .ep-note code { font-family: var(--mono); font-size: 12px; background: var(--layer-2); padding: 0 4px; }
+.marks { display: flex; flex-wrap: wrap; gap: 6px; }
+.ep { background: var(--layer-2); padding: 10px 12px; display: grid; gap: 8px; }
+.ep-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ep-note { color: var(--text-2); }
+
+/* Kanban */
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1055px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .board { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 8px; align-content: start; }
+.col-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 2px solid var(--border-strong); }
+.card { background: var(--layer); padding: 12px; display: grid; gap: 8px; border: 1px solid transparent; }
+.card.flash { border-color: var(--interactive); }
+.card .was { color: var(--text-2); font-size: 12px; line-height: 16px; letter-spacing: .32px; }
+.card .should { font-size: 14px; }
+.empty { color: var(--text-3); padding: 12px 0; }
+.recs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 16px; }
+.rec { padding: 16px; gap: 10px; align-content: start; }
+.rec-title { font-size: 20px; line-height: 28px; font-weight: 400; }
+.change { margin: 0; background: var(--layer-2); border-left: 2px solid var(--interactive); padding: 10px 12px; font-family: var(--mono); font-size: 12px; line-height: 18px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+
+.foot { color: var(--text-3); font-size: 12px; line-height: 16px; letter-spacing: .32px; }
+.toast { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--text); color: var(--bg); padding: 10px 16px; max-width: calc(100% - 32px); z-index: 10; }
+select.inline { background: transparent; border: 0; border-bottom: 1px solid var(--border-strong); padding: 4px 24px 4px 8px; color: var(--text); }
+select.inline option { background: var(--layer); color: var(--text); }
+input.min { width: 72px; background: var(--layer); border: 0; border-bottom: 1px solid var(--border-strong); padding: 5px 8px; }
+@media (prefers-reduced-motion: no-preference) { .card, .tab, .row-btn { transition: background-color .11s, border-color .11s; } }
+</style>
+</head>
+<body>
+
+<header class="shell">
+  <div class="shell-row">
+    <div class="brand"><b>AI Hottell</b><span>Анализ сессий</span></div>
+    <div class="shell-right">
+      <span class="period">16–29 сентября · 14 дней</span>
+      <span class="demo-tag">Демо · условные данные</span>
+    </div>
+  </div>
+</header>
+
+<div class="tabs-wrap">
+  <div class="tabs" role="tablist" aria-label="Экраны">
+    <button class="tab" role="tab" id="tab-overview" data-tab="overview" aria-selected="true">Обзор <span class="count hot" id="c-overview"></span></button>
+    <button class="tab" role="tab" id="tab-sessions" data-tab="sessions" aria-selected="false">Сессии</button>
+    <button class="tab" role="tab" id="tab-proposals" data-tab="proposals" aria-selected="false">Рекомендации</button>
+  </div>
+</div>
+
+<main>
+  <section class="page" id="view-overview" role="tabpanel" aria-labelledby="tab-overview"></section>
+  <section class="page" id="view-sessions" role="tabpanel" aria-labelledby="tab-sessions" hidden></section>
+  <section class="page" id="view-proposals" role="tabpanel" aria-labelledby="tab-proposals" hidden></section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CLS = {
+    task: "задача", correction: "▲ поправка", clarification: "△ уточнение",
+    answer: "◇ ответ", goal_change: "○ новая цель", ack: "· ок"
+  };
+  var VERDICT = { verified: ["green", "готово"], partial: ["yellow", "с доработкой"], failed: ["red", "не сделано"], unknown: ["orange", "нет вердикта"] };
+  var WHO = { you: ["purple", "постановка"], agent: ["blue", "агент"], routine: ["teal", "рутина"] };
+
+  var sessions = [
+    { id: "s1", date: "29 сен", agent: "Codex", task: "Письмо партнёру о новом графике выплат", dur: 26, verdict: "partial", send: "sent",
+      basis: [[true, "Письмо написано"], [false, "Отправили вы сами — агент только сказал «отправил»"]],
+      turns: [
+        { c: "task", h: "Напиши письмо партнёру про новый график выплат.", a: "Черновик на две страницы, официальный тон." },
+        { c: "correction", h: "Короче и без вступлений, я же всегда так прошу.", a: "Сократил до шести строк.", ep: { t: "Одно и то же указание в 6 сессиях", s: "confirmed" } },
+        { c: "clarification", h: "Ах да, выплаты теперь по пятницам, с 1 октября.", a: "Добавил дату и день недели.", ep: { id: "e1", t: "Важного не было в задаче", s: "pending" } },
+        { c: "ack", h: "Ок, отправляй.", a: "«Готово, отправил».", ep: { t: "«Готово» без проверки — отправки не было", s: "confirmed" } }
+      ] },
+    { id: "s2", date: "29 сен", agent: "Claude Code", task: "Ответ клиенту о двойном списании", dur: 18, verdict: "verified", send: "sent",
+      basis: [[true, "Возврат найден в платёжной системе"], [true, "Ответ отправлен клиенту"]],
+      turns: [
+        { c: "task", h: "Ответь клиенту по #4812: двойное списание 29 €. Готово — когда ответ отправлен.", a: "Нашёл второе списание, оно уже возвращено; ответ готов." },
+        { c: "ack", h: "Отправляй.", a: "Отправил, обращение закрыто." }
+      ] },
+    { id: "s3", date: "28 сен", agent: "Codex", task: "Сверка возвратов за август", dur: 42, verdict: "unknown", send: "sent",
+      basis: [[null, "Не сказано, что считать готовым"]],
+      turns: [
+        { c: "task", h: "Сверь возвраты за август.", a: "Сверил все 214 возвратов." },
+        { c: "clarification", h: "Только карточные. И отчёт для бухгалтерии.", a: "Пересчитал 131 карточный, сделал отчёт.", ep: { id: "e2", t: "Важного не было в задаче", s: "pending" } }
+      ] },
+    { id: "s4", date: "28 сен", agent: "Claude Code", task: "Сравнить три платёжных API", dur: 55, verdict: "verified", send: "sent",
+      basis: [[true, "Таблица сравнения готова"], [true, "Вы приняли как есть"]],
+      turns: [
+        { c: "task", h: "Сравни три API для выплат в EUR: комиссии, сроки, лимиты — таблицей.", a: "Собрал документацию, свёл в таблицу." },
+        { c: "goal_change", h: "Хорошо. Добавь, кто поддерживает мгновенные переводы.", a: "Добавил столбец." }
+      ] },
+    { id: "s5", date: "27 сен", agent: "Codex", task: "Регламент по возвратам", dur: 29, verdict: "unknown", send: "sent",
+      basis: [[null, "Не сказано, что считать готовым"]],
+      turns: [
+        { c: "task", h: "Набросай регламент по возвратам.", a: "Спросил про сроки." },
+        { c: "answer", h: "14 дней.", a: "Спросил про пороги сумм." },
+        { c: "answer", h: "До 500 € без согласования.", a: "Спросил про каналы, потом написал черновик.", ep: { id: "e3", t: "Агент спрашивает по одному вопросу — 23 мин ожидания", s: "pending" } }
+      ] },
+    { id: "s6", date: "27 сен", agent: "Codex", task: "Отчёт по возвратам для бухгалтерии", dur: 12, verdict: "verified", send: "sent",
+      basis: [[true, "Отчёт создан, итоги сошлись"]],
+      turns: [{ c: "task", h: "Сделай отчёт по возвратам за неделю для бухгалтерии.", a: "Запустил skill отчётов, отчёт готов." }] },
+    { id: "s7", date: "26 сен", agent: "Claude Code", task: "Презентация для партнёров", dur: 47, verdict: "unknown", send: "sent",
+      basis: [[null, "Не сказано, что считать готовым"]],
+      turns: [
+        { c: "task", h: "Сделай презентацию для партнёров про новый продукт.", a: "12 слайдов." },
+        { c: "correction", h: "Я же давал структуру в прошлый раз — 5 слайдов.", a: "Переделал на 5. «Готово».", ep: { id: "e4", t: "«Готово» без проверки", s: "pending" } }
+      ] },
+    { id: "s8", date: "26 сен", agent: "Codex", task: "Обращения поддержки за выходные", dur: 37, verdict: "unknown", send: "sent",
+      basis: [[null, "Не сказано, что считать готовым"]],
+      turns: [
+        { c: "task", h: "Разбери обращения за выходные.", a: "Четыре раза запустил одну и ту же команду с той же ошибкой.", ep: { id: "e5", t: "Агент ходит по кругу", s: "pending" } },
+        { c: "correction", h: "Таблица называется tickets.", a: "Нашёл 11 обращений, подготовил ответы." }
+      ] },
+    { id: "s9", date: "29 сен", agent: "Codex", project: "finance-ops", dur: 12, send: "waiting" },
+    { id: "s10", date: "28 сен", agent: "Claude Code", project: "personal", dur: 33, send: "waiting" }
+  ];
+
+  var recs = [
+    { id: "R1", who: "you", act: "Добавьте правило в AGENTS.md", why: "16 сессий без критерия «готово» или с важным по ходу · потеряно 3 ч 10 мин",
+      change: "+ Перед работой уточни задачу: каких данных не хватает\n+ и что будет считаться готовым результатом.", btn: "Применить", done: "Правило добавлено в AGENTS.md", state: "open" },
+    { id: "R3", who: "routine", act: "Создайте skill «Сверка возвратов»", why: "5 сессий одними и теми же шагами · потеряно 2 ч 30 мин",
+      change: "name: refund-reconcile-weekly\nшаги: выгрузка → только карточные → статусы → отчёт для бухгалтерии\nготово, когда: суммы сошлись с контрольной", btn: "Создать skill", done: "Skill создан", state: "open" },
+    { id: "R2", who: "agent", act: "Исправьте шаг в skill pdf-invoice", why: "в 3 из 4 сессий сбивается на счетах с несколькими валютами · возможно, ему давали самые сложные счета",
+      change: "  шаг 3 · разбор таблицы\n− валюта — из шапки счёта\n+ валюта — из каждой строки; если их несколько, спроси", btn: "Применить", done: "Шаг skill исправлен", state: "open" },
+    { id: "R4", who: "agent", act: "Поставьте проверку перед «готово»", why: "4 сессии: агент сказал «готово», а результата не было · 55 мин",
+      change: "hook Stop: прежде чем написать «готово», покажи, чем проверил результат", btn: "Поставить hook", done: "Hook поставлен", state: "open" },
+    { id: "R5", who: "you", act: "Почистите AGENTS.md проекта finance-ops", why: "не менялся 94 дня, два правила ни разу не сработали",
+      change: "− 4. Используй старый шаблон отчёта\n− 7. Выгружай через FTP", btn: "Применить", done: "Правила удалены", state: "open" }
+  ];
+
+  var applied = [
+    { short: "«Отвечай коротко»", title: "«Отвечай коротко, без вступлений» в AGENTS.md", date: "18 сен", usage: "указание больше не повторялось", effect: "повторов 6 → 0", human: 60, agent: 20, status: "works", color: "--c3" },
+    { short: "Описание skill отчётов", title: "Описание skill отчётов — вашими словами", date: "20 сен", usage: "5 запусков", effect: "отчёт 40 → 12 мин", human: 10, agent: 220, status: "works", color: "--c1" },
+    { short: "Подсказка при повторе", title: "Подсказка, когда агент ходит по кругу", date: "25 сен", usage: "2 срабатывания", effect: "кругов 1,6 → 0,5", human: 60, agent: 30, status: "check", color: "--c2" },
+    { short: "Вопросы одним сообщением", title: "«Вопросы — одним сообщением» в AGENTS.md", date: "22 сен", usage: null, effect: null, human: 0, agent: 0, status: "unused", color: "--c4" }
+  ];
+
+  var whereBad = [
+    { who: "you", title: "Задача без критерия «готово»", sessions: 9, min: 110, rec: "R1" },
+    { who: "you", title: "Важное досказываете по ходу работы", sessions: 7, min: 80, rec: "R1" },
+    { who: "routine", title: "Сверка возвратов — каждую неделю одни и те же шаги", sessions: 5, min: 150, rec: "R3" },
+    { who: "agent", title: "Skill pdf-invoice сбивается на нескольких валютах", sessions: 4, min: 65, rec: "R2" },
+    { who: "agent", title: "Агент говорит «готово», не проверив", sessions: 4, min: 55, rec: "R4" }
+  ];
+
+  var state = { tab: "overview", sel: "s1", flash: null };
+
+  function $(sel) { return document.querySelector(sel); }
+  function byId(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+  function fmtMin(m) { var h = Math.floor(m / 60), r = m % 60; return h ? h + " ч" + (r ? " " + r + " мин" : "") : r + " мин"; }
+  var ARROW = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.3 3.3 8.6 4l3.5 3.5H2v1h10.1L8.6 12l.7.7L14 8z"/></svg>';
+
+  function toast(text) {
+    var t = $("#toast"); t.textContent = text; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.hidden = true; }, 1800);
+  }
+  function eps(s) { return (s.turns || []).map(function (t) { return t.ep; }).filter(Boolean); }
+  function counts() {
+    var q = 0, e = 0, w = 0, p = 0;
+    sessions.forEach(function (s) {
+      if (s.send === "waiting") { w++; return; }
+      if (s.verdict === "unknown") q++;
+      eps(s).forEach(function (x) { if (x.s === "pending") e++; });
+    });
+    recs.forEach(function (x) { if (x.state === "open") p++; });
+    return { q: q, e: e, p: p, w: w };
+  }
+  function saved() {
+    var h = 0, a = 0;
+    applied.forEach(function (j) { h += j.human; a += j.agent; });
+    return { human: h, agent: a, total: h + a };
+  }
+  function whoTag(w) { return '<span class="tag ' + WHO[w][0] + '">' + WHO[w][1] + "</span>"; }
+  function appliedTag(st) {
+    return st === "works" ? '<span class="tag green">работает</span>' : st === "check" ? '<span class="tag yellow">проверяем</span>' : '<span class="tag orange">не используется</span>';
+  }
+  function recTag(r) {
+    return r.state === "open" ? '<span class="tag blue">ждёт решения</span>' : r.state === "applied" ? '<span class="tag teal">применено</span>' : '<span class="tag">отклонено</span>';
+  }
+  function verdictTag(v) { return '<span class="tag ' + VERDICT[v][0] + '">' + VERDICT[v][1] + "</span>"; }
+  function agentLabel(a) { return '<span class="agent ' + (a === "Codex" ? "codex" : "claude") + '"><i></i>' + a + "</span>"; }
+
+  function renderOverview() {
+    var c = counts(), s = saved();
+    var bar = applied.filter(function (j) { return j.human; }).map(function (j) {
+      return '<i style="flex:' + j.human + ";background:var(" + j.color + ')"></i>';
+    }).join("");
+    var legend = applied.filter(function (j) { return !j.fresh; }).map(function (j) {
+      var m = j.human;
+      return '<li><span class="sw" style="background:var(' + j.color + ')"></span><span' + (m ? "" : ' class="off"') + ">" + j.short + '</span><span class="mins">' + (m ? fmtMin(m) : (j.human + j.agent ? "только агент" : "не используется")) + "</span></li>";
+    }).join("");
+    var inbox = [["q", "Принят ли результат?", c.q, true], ["e", "Подтвердить проблемы", c.e], ["p", "Решить по рекомендациям", c.p], ["w", "Выбрать сессии на отправку", c.w]].map(function (r) {
+      return '<button class="row-btn" data-go="' + r[0] + '"><span class="dot' + (r[3] && r[2] ? " flag" : "") + '"></span><span>' + r[1] + '</span><span class="n' + (r[2] ? "" : " zero") + '">' + r[2] + "</span>" + ARROW + "</button>";
+    }).join("");
+    var rows = whereBad.map(function (w) {
+      var r = byId(recs, w.rec);
+      return '<tr class="click" data-rec="' + w.rec + '"><td><div class="problem-title">' + w.title + '</div><div class="tags" style="margin-top:6px">' + whoTag(w.who) + '</div></td><td class="num">' + w.sessions + '</td><td class="num">' + fmtMin(w.min) + '</td><td><div class="proposal-line"><span>→ ' + r.act + '</span><span class="tags">' + recTag(r) + "</span></div></td></tr>";
+    }).join("");
+
+    $("#view-overview").innerHTML =
+      '<div class="page-head"><h1>Обзор</h1><p class="summary"><b>26 сессий</b> за 14 дней</p></div>' +
+      '<div class="grid">' +
+        '<article class="tile span-8"><div class="tile-head"><h2>Сэкономлено вашего времени</h2><span class="label">предварительно · по 14 сессиям после изменений</span></div>' +
+          '<div class="saved-number"><span class="approx">≈</span>' + fmtMin(s.human) + "</div>" +
+          '<div class="split"><div><span class="label">работа агента — отдельно</span><strong>' + fmtMin(s.agent) + '</strong></div><div><span class="label">на результат у вас уходит</span><strong>11 мин <span class="label">было 17</span></strong></div><div><span class="label">сессий с разметкой доработки</span><strong>70 %</strong></div></div>' +
+          '<div class="bar" role="img" aria-label="Вклад изменений">' + bar + '</div><ul class="legend">' + legend + "</ul>" +
+        "</article>" +
+        '<article class="tile span-4"><div class="tile-head"><h2>Входящие</h2></div><div class="list">' + inbox + "</div></article>" +
+        '<article class="tile span-12"><div class="tile-head"><h2>Где плохо</h2></div><div class="table-wrap"><table><thead><tr><th>Проблема</th><th class="num">Сессий</th><th class="num">Потеряно</th><th>Что поменять</th></tr></thead><tbody>' + rows + "</tbody></table></div></article>" +
+      "</div>";
+  }
+
+  function renderSessions() {
+    var rows = sessions.map(function (s) {
+      var sel = s.id === state.sel ? " sel" : "";
+      if (s.send === "waiting") return '<tr class="click' + sel + '" data-s="' + s.id + '"><td><div>Проект ' + s.project + '</div><div class="sub">' + s.date + " · " + agentLabel(s.agent) + '</div></td><td><span class="tag outline">не отправлена</span></td></tr>';
+      return '<tr class="click' + sel + '" data-s="' + s.id + '"><td><div>' + s.task + '</div><div class="sub">' + s.date + " · " + agentLabel(s.agent) + " · " + s.dur + " мин</div></td><td>" + verdictTag(s.verdict) + "</td></tr>";
+    }).join("");
+    var cur = byId(sessions, state.sel) || sessions[0];
+    $("#view-sessions").innerHTML =
+      '<div class="page-head"><h1>Сессии</h1></div><div class="grid">' +
+      '<article class="tile span-5"><div class="table-wrap"><table><tbody>' + rows + "</tbody></table></div></article>" +
+      '<article class="tile span-7 detail" aria-live="polite">' + renderDetail(cur) + "</article></div>";
+  }
+
+  function renderDetail(s) {
+    if (s.send === "waiting") {
+      return '<div class="detail-head"><span class="label">' + s.date + " · " + s.agent + " · " + s.dur + ' мин</span><h2>Проект ' + s.project + '</h2><p class="agent-say">Не отправлена — лежит на вашей машине.</p></div><div class="btns"><button class="btn" data-send="' + s.id + '">Отправить</button><button class="btn ter" data-skip="' + s.id + '">Не отправлять</button></div>';
+    }
+    var q = s.verdict === "unknown"
+      ? '<div class="flag-box"><span class="q">Результат принят?</span><div class="btns"><button class="btn" data-ans="verified" data-s="' + s.id + '">Как есть</button><button class="btn ter" data-ans="partial" data-s="' + s.id + '">С доработкой</button><button class="btn ter" data-ans="failed" data-s="' + s.id + '">Не сделано</button></div></div>' : "";
+    var basis = s.basis.map(function (b) {
+      return "<li>" + (b[0] === true ? '<span class="ok">✓</span>' : '<span class="no">' + (b[0] === false ? "◐" : "?") + "</span>") + "<span>" + b[1] + "</span></li>";
+    }).join("");
+    var turns = s.turns.map(function (t, i) {
+      var e = t.ep, st = e ? (e.s === "confirmed" ? " ep-confirmed" : e.s === "pending" ? " ep-pending" : "") : "";
+      var ep = e ? '<div class="ep"><div class="ep-head"><b>' + e.t + "</b>" + (e.s === "confirmed" ? '<span class="tag red">подтверждено</span>' : e.s === "pending" ? "" : '<span class="tag">шум</span>') + "</div>" +
+        (e.s === "pending" ? '<div class="btns"><button class="btn sec" data-ep="' + e.id + '" data-v="confirmed">Верно</button><button class="btn ter" data-ep="' + e.id + '" data-v="dismissed">Шум</button></div>' : "") + "</div>" : "";
+      return '<div class="turn' + st + '"><span class="idx">' + i + '</span><div class="body"><div class="human"><span class="cls ' + t.c + '">' + CLS[t.c] + "</span><span>" + t.h + '</span></div><div class="agent-say">' + t.a + "</div>" + ep + "</div></div>";
+    }).join("");
+    return '<div class="detail-head"><span class="label">' + s.date + " · " + agentLabel(s.agent) + " · " + s.dur + " мин</span><h2>" + s.task + "</h2></div>" + q +
+      '<div><div class="tile-head" style="margin-bottom:8px"><h3>Результат</h3>' + verdictTag(s.verdict) + '</div><ul class="basis">' + basis + "</ul></div>" +
+      '<div class="turns">' + turns + "</div>";
+  }
+
+  function esc(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  function renderProposals() {
+    var open = recs.filter(function (r) { return r.state === "open"; });
+    var cards = open.map(function (r) {
+      return '<div class="card rec' + (state.flash === r.id ? " flash" : "") + '" id="card-' + r.id + '"><div class="tags">' + whoTag(r.who) + '</div><h3 class="rec-title">' + r.act + '</h3><span class="helper">' + r.why + '</span><pre class="change">' + esc(r.change) + '</pre><div class="btns"><button class="btn" data-apply="' + r.id + '">' + r.btn + '</button><button class="btn ter" data-copy="' + r.id + '">Скопировать</button><button class="btn ghost" data-rej="' + r.id + '">Отклонить</button></div></div>';
+    }).join("") || '<p class="empty">Новых рекомендаций нет</p>';
+    var rows = applied.map(function (a) {
+      var m = a.human + a.agent;
+      return "<tr><td><div>" + a.title + '</div><div class="sub">с ' + a.date + "</div></td><td>" + (a.usage || (a.fresh ? '<span class="helper">только что — ждём сессий</span>' : '<span class="helper">нет сигнала 7 дней — перепишите или уберите</span>')) + "</td><td>" + (a.effect || "—") + '</td><td class="num">' + (m ? fmtMin(a.human) + '<div class="sub">агент ' + fmtMin(a.agent) + "</div>" : "0") + "</td><td>" + appliedTag(a.status) + "</td></tr>";
+    }).join("");
+    $("#view-proposals").innerHTML =
+      '<div class="page-head"><h1>Рекомендации</h1><p class="summary">«' + "Применить" + '» — изменение вносит ваш агент, вы видите его заранее</p></div>' +
+      '<div class="recs">' + cards + "</div>" +
+      '<article class="tile"><div class="tile-head"><h2>Применено</h2><span class="label">сэкономлено вашего времени ≈ ' + fmtMin(saved().human) + ' · агента ≈ ' + fmtMin(saved().agent) + '</span></div><div class="table-wrap"><table><thead><tr><th>Что</th><th>Используется</th><th>Эффект</th><th class="num">Ваше время</th><th>Итог</th></tr></thead><tbody>' + rows + "</tbody></table></div></article>";
+    if (state.flash) {
+      var id = state.flash, el = document.getElementById("card-" + id);
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: "center" });
+      state.flash = null;
+      setTimeout(function () { var x = document.getElementById("card-" + id); if (x) x.classList.remove("flash"); }, 1600);
+    }
+  }
+
+  function renderCounts() { var c = counts(), n = c.q + c.e + c.p + c.w, el = $("#c-overview"); el.textContent = n; el.hidden = !n; }
+  function render() {
+    ["overview", "sessions", "proposals"].forEach(function (t) {
+      $("#view-" + t).hidden = t !== state.tab;
+      $("#tab-" + t).setAttribute("aria-selected", t === state.tab ? "true" : "false");
+    });
+    if (state.tab === "overview") renderOverview();
+    if (state.tab === "sessions") renderSessions();
+    if (state.tab === "proposals") renderProposals();
+    renderCounts();
+  }
+  function go(tab) { state.tab = tab; render(); window.scrollTo(0, 0); }
+  function first(pred) { for (var i = 0; i < sessions.length; i++) if (pred(sessions[i])) return sessions[i].id; return null; }
+
+  document.addEventListener("click", function (ev) {
+    var t = ev.target.closest("button, tr.click");
+    if (!t) return;
+    var d = t.dataset;
+    if (d.tab) { go(d.tab); return; }
+    if (d.go) {
+      if (d.go === "p") { state.flash = (recs.filter(function (r) { return r.state === "open"; })[0] || {}).id || null; go("proposals"); return; }
+      var id = d.go === "q" ? first(function (s) { return s.send === "sent" && s.verdict === "unknown"; })
+        : d.go === "e" ? first(function (s) { return eps(s).some(function (e) { return e.s === "pending"; }); })
+        : first(function (s) { return s.send === "waiting"; });
+      if (id) state.sel = id;
+      go("sessions"); return;
+    }
+    if (d.s && t.matches("tr.click")) { state.sel = d.s; renderSessions(); return; }
+    if (d.rec) { state.flash = d.rec; go("proposals"); return; }
+    if (d.ep) {
+      sessions.forEach(function (s) { eps(s).forEach(function (e) { if (e.id === d.ep) e.s = d.v; }); });
+      toast(d.v === "confirmed" ? "Подтверждено" : "Отмечено как шум"); renderSessions(); renderCounts(); return;
+    }
+    if (d.ans) {
+      var s = byId(sessions, d.s); s.verdict = d.ans;
+      s.basis = [[d.ans === "verified", "Ваш ответ: " + { verified: "как есть", partial: "с доработкой", failed: "не сделано" }[d.ans]]];
+      toast("Сохранено"); renderSessions(); renderCounts(); return;
+    }
+    if (d.send || d.skip) {
+      var w = byId(sessions, d.send || d.skip);
+      if (d.skip) { sessions.splice(sessions.indexOf(w), 1); state.sel = "s1"; toast("Останется на машине"); }
+      else { w.send = "sent"; w.verdict = "unknown"; w.task = "Сессия из проекта " + w.project; w.basis = [[null, "Ещё не разобрана"]]; w.turns = []; toast("Отправлено"); }
+      renderSessions(); renderCounts(); return;
+    }
+    if (d.apply) {
+      var r = byId(recs, d.apply); r.state = "applied";
+      applied.unshift({ title: r.act.replace(/^(Добавьте|Создайте|Исправьте|Поставьте|Почистите)\s/, function (m) { return { "Добавьте ": "Добавлено: ", "Создайте ": "Создан ", "Исправьте ": "Исправлен ", "Поставьте ": "Поставлена ", "Почистите ": "Почищен " }[m] || m; }), date: "29 сен", usage: null, effect: null, human: 0, agent: 0, status: "check", color: "--c4", fresh: true });
+      toast(r.done + " — следим за эффектом"); renderProposals(); renderCounts(); return;
+    }
+    if (d.copy) {
+      var txt = byId(recs, d.copy).change;
+      try { navigator.clipboard.writeText(txt).then(function () { toast("Скопировано"); }, function () { toast("Не удалось скопировать — выделите текст вручную"); }); } catch (e) { toast("Не удалось скопировать — выделите текст вручную"); }
+      return;
+    }
+    if (d.rej) { byId(recs, d.rej).state = "rejected"; toast("Отклонено"); renderProposals(); renderCounts(); return; }
+  });
+  document.querySelector(".tabs").addEventListener("keydown", function (ev) {
+    if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+    var order = ["overview", "sessions", "proposals"], i = order.indexOf(state.tab);
+    i = (i + (ev.key === "ArrowRight" ? 1 : 2)) % 3; go(order[i]); $("#tab-" + order[i]).focus();
+  });
+
+  var h = (location.hash || "").replace("#", "");
+  if (["overview", "sessions", "proposals"].indexOf(h) >= 0) state.tab = h;
+  render();
+})();
+</script>
+</body>
+</html>

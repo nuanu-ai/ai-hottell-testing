@@ -1,0 +1,35 @@
+# Локальный стенд телеметрии агентов: OTel Collector (OTLP/HTTP :4318) -> ClickHouse (:8123).
+# Без токена и без маскировки — только для своей машины, порты слушают 127.0.0.1.
+#   docker compose -f local/docker-compose.yml up -d
+#   открыть http://localhost:8123/play  (пользователь default, без пароля)
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    environment:
+      CLICKHOUSE_DB: otel
+      CLICKHOUSE_SKIP_USER_SETUP: "1"   # default без пароля, доступ по сети — только локально
+    ports:
+      - "127.0.0.1:8123:8123"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "-q", "SELECT 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "127.0.0.1:4318:4318"
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  clickhouse-data:

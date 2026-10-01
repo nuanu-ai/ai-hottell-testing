@@ -1,0 +1,68 @@
+{
+ "session_id": "00000000-0000-4000-8000-00000000000a",
+ "human_turns": [
+  {
+   "turn_index": 0,
+   "class": "task"
+  },
+  {
+   "turn_index": 1,
+   "class": "correction"
+  },
+  {
+   "turn_index": 2,
+   "class": "answer"
+  }
+ ],
+ "new_episodes": [
+  {
+   "pattern_id": "D12",
+   "span": {
+    "turn_from": 1,
+    "turn_to": 1
+   },
+   "status": "suspected",
+   "severity": "medium",
+   "evidence": [
+    {
+     "kind": "event",
+     "id": "59",
+     "note": "Склады снова объединены"
+    }
+   ],
+   "explanation": "Граница потеряна."
+  }
+ ],
+ "proposals": [
+  {
+   "pattern_id": "D12",
+   "evidence": [
+    {
+     "kind": "event",
+     "id": "69"
+    }
+   ],
+   "cause": "Нет сверки",
+   "class": "policy",
+   "target": "инструкция склада",
+   "was": "Склады объединялись",
+   "should_be": "Держать склады раздельно.",
+   "priority": "medium"
+  },
+  {
+   "pattern_id": "D01",
+   "evidence": [
+    {
+     "kind": "event",
+     "id": "11"
+    }
+   ],
+   "cause": "Нет критерия",
+   "class": "skill",
+   "target": "skill складского учёта",
+   "was": "Критерий не назван",
+   "should_be": "Сначала назвать критерий готовности.",
+   "priority": "low"
+  }
+ ]
+}

@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://git.alva.dev/alva/harness-telemetry/docs/specs/hottell-contract/settings.schema.json",
+  "title": "Настройки-запреты hottell",
+  "description": "Документ настроек-запретов пользователя (HT-52, settings.md). Отсутствующее поле означает значение по умолчанию: всё разрешено, история не догружается.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Версия настроек; ведёт сервер, клиент её не задаёт."
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claude": {
+          "type": "object",
+          "description": "Запреты для Claude Code.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Вид 1 «Агент»: false выключает агента целиком."
+            },
+            "sources": {
+              "$ref": "#/$defs/sources"
+            },
+            "hook_events": {
+              "type": "object",
+              "description": "Вид 3 «Событие хука»: запрещённые hook_event_name агента.",
+              "additionalProperties": false,
+              "properties": {
+                "denied": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/claudeHookEvent"
+                  }
+                }
+              }
+            },
+            "hook_fields": {
+              "type": "object",
+              "description": "Вид 4 «Поле события хука»: запрещённые поля верхнего уровня.",
+              "additionalProperties": false,
+              "properties": {
+                "denied": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/hookField"
+                  }
+                }
+              }
+            },
+            "native_content": {
+              "type": "object",
+              "description": "Вид 6 «Категория содержимого нативного OTel».",
+              "additionalProperties": false,
+              "properties": {
+                "denied": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/nativeContentCategory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "codex": {
+          "type": "object",
+          "description": "Запреты для Codex CLI.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Вид 1 «Агент»: false выключает агента целиком."
+            },
+            "sources": {
+              "$ref": "#/$defs/sources"
+            },
+            "hook_events": {
+              "type": "object",
+              "description": "Вид 3 «Событие хука»: запрещённые hook_event_name агента.",
+              "additionalProperties": false,
+              "properties": {
+                "denied": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/codexHookEvent"
+                  }
+                }
+              }
+            },
+            "hook_fields": {
+              "type": "object",
+              "description": "Вид 4 «Поле события хука»: запрещённые поля верхнего уровня.",
+              "additionalProperties": false,
+              "properties": {
+                "denied": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/hookField"
+                  }
+                }
+              }
+            },
+            "native_content": {
+              "type": "object",
+              "description": "Вид 6 «Категория содержимого нативного OTel».",
+              "additionalProperties": false,
+              "properties": {
+                "denied": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "default": [],
+                  "items": {
+                    "$ref": "#/$defs/nativeContentCategory"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "folders": {
+      "type": "object",
+      "description": "Вид 5 «Папка проекта», общий для обоих агентов.",
+      "additionalProperties": false,
+      "properties": {
+        "denied": {
+          "type": "array",
+          "uniqueItems": true,
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/folderPattern"
+          }
+        },
+        "allowed": {
+          "type": "array",
+          "uniqueItems": true,
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/folderPattern"
+          }
+        }
+      }
+    },
+    "backfill_history": {
+      "type": "boolean",
+      "default": false,
+      "description": "Вид 7 «Догрузить историю»."
+    }
+  },
+  "$defs": {
+    "sources": {
+      "type": "object",
+      "description": "Вид 2 «Источник»: false выключает источник.",
+      "additionalProperties": false,
+      "properties": {
+        "hooks": {
+          "type": "boolean",
+          "default": true,
+          "description": "События хуков."
+        },
+        "transcripts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Транскрипты."
+        },
+        "native_metrics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Нативные метрики."
+        },
+        "native_logs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Нативные события (логи)."
+        },
+        "native_traces": {
+          "type": "boolean",
+          "default": true,
+          "description": "Нативные трейсы."
+        }
+      }
+    },
+    "claudeHookEvent": {
+      "enum": [
+        "SessionStart",
+        "Setup",
+        "InstructionsLoaded",
+        "UserPromptSubmit",
+        "UserPromptExpansion",
+        "MessageDisplay",
+        "PreToolUse",
+        "PermissionRequest",
+        "PermissionDenied",
+        "PostToolUse",
+        "PostToolUseFailure",
+        "PostToolBatch",
+        "Notification",
+        "SubagentStart",
+        "SubagentStop",
+        "TaskCreated",
+        "TaskCompleted",
+        "Stop",
+        "StopFailure",
+        "TeammateIdle",
+        "ConfigChange",
+        "CwdChanged",
+        "DirectoryAdded",
+        "FileChanged",
+        "WorktreeCreate",
+        "WorktreeRemove",
+        "PreCompact",
+        "PostCompact",
+        "PreModelSwitch",
+        "PostModelSwitch",
+        "Elicitation",
+        "ElicitationResult",
+        "SessionEnd"
+      ]
+    },
+    "codexHookEvent": {
+      "enum": [
+        "SessionStart",
+        "SessionEnd",
+        "UserPromptSubmit",
+        "PreToolUse",
+        "PermissionRequest",
+        "PostToolUse",
+        "PreCompact",
+        "PostCompact",
+        "SubagentStart",
+        "SubagentStop",
+        "Stop",
+        "Interrupt"
+      ]
+    },
+    "hookField": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "not": {
+        "enum": [
+          "session_id",
+          "hook_event_name",
+          "cwd"
+        ]
+      },
+      "description": "Имя поля верхнего уровня; служебные session_id, hook_event_name, cwd запрещать нельзя."
+    },
+    "nativeContentCategory": {
+      "enum": [
+        "prompts",
+        "assistant_responses",
+        "tool_details",
+        "tool_content",
+        "raw_api_bodies"
+      ]
+    },
+    "folderPattern": {
+      "type": "string",
+      "pattern": "^(/|~/)",
+      "description": "Шаблон пути: начинается с / или ~/, ** — любое число сегментов."
+    }
+  }
+}

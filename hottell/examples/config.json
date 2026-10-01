@@ -1,0 +1,17 @@
+{
+  "endpoint": "https://otel.alva.dev/v1/logs",
+  "token_file": "~/.config/hottell/token",
+  "spool_dir": "~/.local/state/hottell/spool",
+  "environment": "lab",
+  "service_name": "agent-hooks",
+  "buffer_max_events": 10000,
+  "buffer_max_mb": 64,
+  "batch_size": 100,
+  "send_timeout_sec": 5,
+  "linger_sec": 5,
+  "backoff_max_sec": 60,
+  "max_field_bytes": 65536,
+  "send_prompts": true,
+  "enrich_transcript": true,
+  "debug_log": ""
+}

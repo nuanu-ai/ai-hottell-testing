@@ -1,0 +1,21 @@
+# The isolated stand of `task e2e`, on top of compose.yaml:
+# docker compose -p ht-e2e -f compose.yaml -f compose.e2e.yaml up -d --build
+services:
+  # Reached only inside the compose network, so a running `task up` keeps its 5432.
+  postgres:
+    ports: !reset []
+
+  # app depends on collector; like postgres, both stay inside the compose network.
+  clickhouse:
+    ports: !reset []
+
+  collector:
+    ports: !reset []
+
+  app:
+    ports: !override
+      - "18080:8080"
+    environment:
+      HT_PUBLIC_ORIGIN: http://localhost:18080
+      HT_WEBAUTHN_RP_ORIGINS: http://localhost:18080
+      HT_WEBAUTHN_RP_ID: localhost

@@ -1,0 +1,17 @@
+[otel]
+# Written by hottell, which owns the whole [otel] family; hottell uninstall restores the previous one.
+environment = "hottell"
+trace_exporter = "none"
+log_user_prompt = true
+log_agent_responses = true
+tool_result.max_bytes = 9223372036854775807
+
+[otel.exporter.otlp-http]
+endpoint = "https://telemetry.example.test/v1/logs"
+protocol = "binary"
+headers = { "Authorization" = "Bearer ht_col_0123456789abcdef" }
+
+[otel.metrics_exporter.otlp-http]
+endpoint = "https://telemetry.example.test/v1/metrics"
+protocol = "binary"
+headers = { "Authorization" = "Bearer ht_col_0123456789abcdef" }

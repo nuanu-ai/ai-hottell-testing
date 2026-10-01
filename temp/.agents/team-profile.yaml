@@ -1,0 +1,135 @@
+version: 1
+
+tracker:
+  kind: itsaplan
+  host: "https://tasks-api.alva.dev"
+  project: "HT"
+  project_id: 8
+  id_pattern: 'HT-\d+'
+  language: ru
+  mutations: execute
+  capabilities:
+    hierarchy: true
+    labels: true
+    body_file: false
+    post_read_verify: true
+  states:
+    accepted: unstarted
+    designing: started
+    implementing: started
+    reviewing: started
+    awaiting_verification: started
+    done: completed
+  operations:
+    list_states:
+      tool:
+        name: mcp__itsaplan__get_project
+        server_identity_required: true
+        args: { projectKey: "{tracker.project}" }
+      output:
+        kind: json
+        list_from: "$.columns[*]"
+        fields: { column_id: "$.id", state_type: "$.stateType", name: "$.name" }
+    search:
+      tool:
+        name: mcp__itsaplan__search_issues
+        server_identity_required: true
+        args: { projectKey: "{tracker.project}", q: "{query}", limit: 500 }
+      output:
+        kind: json
+        list_from: "$[*]"
+        fields: { id: "$.identifier", internal_id: "$.id", title: "$.title", state: "$.columnId" }
+      pagination:
+        limit_argument: limit
+        truncation_is_visible: "result count equals limit"
+    get:
+      tool:
+        name: mcp__itsaplan__get_issue
+        server_identity_required: true
+        args: { issueId: "{internal_id}" }
+      output:
+        kind: json
+        fields:
+          id: "$.identifier"
+          internal_id: "$.id"
+          title: "$.title"
+          body: "$.description"
+          state: "$.columnId"
+          scope_id: "$.projectId"
+          parent: "$.parentId"
+    create:
+      compose:
+        - operation: list_states
+        - tool:
+            name: mcp__itsaplan__create_issue
+            server_identity_required: true
+            args:
+              projectKey: "{tracker.project}"
+              title: "{title}"
+              description: "{body}"
+              columnId: "{resolved.column}"
+          resolve:
+            column:
+              via: list_states
+              match: state_type
+              case_sensitive: true
+              cardinality: exactly_one
+              argument: column_id
+              on_unresolved: unsupported
+      output:
+        kind: json
+        id_from: "$.id"
+        fields: { id: "$.identifier", internal_id: "$.id", scope_id: "$.projectId" }
+      verify_after: { via: get, field: scope_id }
+    update_status:
+      compose:
+        - operation: list_states
+        - tool:
+            name: mcp__itsaplan__update_issue
+            server_identity_required: true
+            args: { issueId: "{internal_id}", columnId: "{resolved.column}" }
+          resolve:
+            column:
+              via: list_states
+              match: state_type
+              case_sensitive: true
+              cardinality: exactly_one
+              argument: column_id
+              on_unresolved: unsupported
+      verify_after: { via: get, field: state }
+    comment:
+      tool:
+        name: mcp__itsaplan__add_comment
+        server_identity_required: true
+        args: { issueId: "{internal_id}", body: "{body}" }
+      verify_after: { via: list_comments, field: comments }
+    list_comments:
+      tool:
+        name: mcp__itsaplan__list_issue_activity
+        server_identity_required: true
+        args: { issueId: "{internal_id}", limit: 100 }
+      output:
+        kind: json
+        list_from: "$.items[*]"
+        fields: { comments: "$.body", comment_ids: "$.id", kinds: "$.kind" }
+      pagination:
+        limit_argument: limit
+        truncation_is_visible: "nextCursor is non-null"
+    link_child:
+      tool:
+        name: mcp__itsaplan__update_issue
+        server_identity_required: true
+        args: { issueId: "{internal_id}", parentId: "{parent}" }
+      verify_after: { via: get, field: parent }
+    close:
+      compose:
+        - operation: update_status
+          args: { internal_id: "{internal_id}", state: "{states.done}" }
+      failure_after_effect: unknown_or_partial
+      retry: reconcile_get_then_resume_missing_step
+
+# Первичная публикация разрешена владельцем 30.09.2026.
+# Постоянная интеграционная политика пока не согласована.
+specs_dir: docs/specs
+plans_dir: docs/plans
+worktrees: .worktrees

@@ -1,0 +1,9 @@
+{
+  "version": 3,
+  "agents": {
+    "claude": {
+      "hook_events": { "denied": ["SessionPause"] },
+      "mcp_servers": { "denied": ["github"] }
+    }
+  }
+}

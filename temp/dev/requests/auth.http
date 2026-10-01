@@ -1,0 +1,52 @@
+# Sign-in API, checked by hand against a running service on http://localhost:8080.
+#
+# Before: the database migrated (task migrate:up) and the first user created from
+# HT_BOOTSTRAP_EMAIL, HT_BOOTSTRAP_NAME and HT_BOOTSTRAP_PASSWORD of .env
+# (task user:create-first).
+#
+# The requests below run in an HTTP client that reads .env (VS Code REST Client) and keeps
+# the cookies between requests. The same scenario with curl, from the repository root:
+#
+# $ set -a; . ./.env; set +a; jar="$(mktemp)"
+# $ curl -sS -o /dev/null -w 'login %{http_code}\n' -c "$jar" -X POST http://localhost:8080/api/auth/login -H 'Origin: http://localhost:8080' -H 'Content-Type: application/json' -d "{\"email\":\"$HT_BOOTSTRAP_EMAIL\",\"password\":\"$HT_BOOTSTRAP_PASSWORD\"}"
+# $ curl -sS -w '\nme %{http_code}\n' -b "$jar" http://localhost:8080/api/me
+# $ curl -sS -o /dev/null -w 'change password %{http_code}\n' -b "$jar" -X POST http://localhost:8080/api/me/password -H 'Origin: http://localhost:8080' -H 'Content-Type: application/json' -d "{\"currentPassword\":\"$HT_BOOTSTRAP_PASSWORD\",\"newPassword\":\"$HT_BOOTSTRAP_PASSWORD\"}"
+# $ curl -sS -w '\nwrong current password %{http_code}\n' -b "$jar" -X POST http://localhost:8080/api/me/password -H 'Origin: http://localhost:8080' -H 'Content-Type: application/json' -d '{"currentPassword":"not the password","newPassword":"whatever password"}'
+# $ cp "$jar" "$jar.before-logout"
+# $ curl -sS -o /dev/null -w 'logout %{http_code}\n' -b "$jar" -c "$jar" -X POST http://localhost:8080/api/auth/logout -H 'Origin: http://localhost:8080'
+# $ curl -sS -w '\nme after logout %{http_code}\n' -b "$jar" http://localhost:8080/api/me
+# $ curl -sS -w '\nold cookie after logout %{http_code}\n' -b "$jar.before-logout" http://localhost:8080/api/me
+# $ curl -sS -w '\nwrong password %{http_code}\n' -X POST http://localhost:8080/api/auth/login -H 'Origin: http://localhost:8080' -H 'Content-Type: application/json' -d "{\"email\":\"$HT_BOOTSTRAP_EMAIL\",\"password\":\"not the password\"}"
+# $ rm -f "$jar" "$jar.before-logout"
+#
+# Expected: login 204, me 200 with the user, change password 204 (to the same password),
+# wrong current password 400 wrong_current_password, logout 204, me after logout 401
+# unauthenticated, the cookie kept from before logout 401 as well (the session is closed),
+# wrong password 401 invalid_credentials.
+
+@host = http://localhost:8080
+@origin = http://localhost:8080
+
+### Sign in: 204 and Set-Cookie ht_session
+POST {{host}}/api/auth/login
+Origin: {{origin}}
+Content-Type: application/json
+
+{"email": "{{$dotenv HT_BOOTSTRAP_EMAIL}}", "password": "{{$dotenv HT_BOOTSTRAP_PASSWORD}}"}
+
+### The signed-in user: 200 {id, email, name}
+GET {{host}}/api/me
+
+### Change the password: 204; 400 wrong_current_password, password_too_short or password_too_long
+POST {{host}}/api/me/password
+Origin: {{origin}}
+Content-Type: application/json
+
+{"currentPassword": "{{$dotenv HT_BOOTSTRAP_PASSWORD}}", "newPassword": "{{$dotenv HT_BOOTSTRAP_PASSWORD}}"}
+
+### Sign out: 204, the cookie is deleted and the session closed
+POST {{host}}/api/auth/logout
+Origin: {{origin}}
+
+### After sign-out: 401 unauthenticated
+GET {{host}}/api/me
