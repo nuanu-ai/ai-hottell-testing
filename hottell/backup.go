@@ -85,6 +85,20 @@ func restoreAgentConfigs(p paths, dir string) error {
 	if len(entries) != len(backupNames) {
 		return fmt.Errorf("неполный manifest.json")
 	}
+	// A missing/null exists field is not evidence that the original file was
+	// absent: accepting its bool zero value would turn corruption into deletion.
+	var required []struct {
+		Exists *bool        `json:"exists"`
+		Mode   *os.FileMode `json:"mode"`
+	}
+	if err := json.Unmarshal(raw, &required); err != nil {
+		return err
+	}
+	for _, entry := range required {
+		if entry.Exists == nil || entry.Mode == nil {
+			return fmt.Errorf("manifest.json: обязательные поля exists/mode отсутствуют или null")
+		}
+	}
 	contents := make([][]byte, len(entries))
 	for i, entry := range entries {
 		if entry.Name != backupNames[i] {
