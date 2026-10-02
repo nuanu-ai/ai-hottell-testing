@@ -40,7 +40,7 @@ description: Разговор об улучшении работы с Codex ил
 - **Цитата** — id сессии, время и номер события `seq` из `session_read`. Цитируй только события внутри окна. Доказательства `findings` и реестра дают `{session, line}`: `line` — строка `L<n>` транскрипта, то же поле `line` у событий `session_read`, а не `seq`. Чтобы процитировать, вызови `session_read` `{"id": "<session>", "from_line": <line>, "to_line": <line>}` и возьми событие с этой `line`, его `seq`, время и текст; событие вне окна не цитируй. У доказательства живой находки без `line` найди событие по `at`: `session_read` с `from`/`to` вокруг этого времени; не нашлось в самой сессии — это событие субагента: `sessions_list` с `include_subagents: true`, транскрипты, у которых `parent` — эта сессия, и в них `session_read` вокруг `at`. Не нашёл событие — не цитируй.
 - **Страницы.** Длинные сессии читай с `kinds` (например, `user_message`, `tool_result`) и `max_text`, чтобы страница помещалась.
 - **Полнота выборки** — одной строкой в обзоре: «просмотрено S сессий и E событий периода из F найденных файлов; вне периода отброшено X». Всё — из `coverage` `session_stats`: S = `sessions_in_period`, E = `events_in_period`, X = `events_out_of_period` — сумма по всем страницам; F = `sessions_found` — одно и то же на каждой странице, его не складывай. Страницы `session_stats` — не снимок: если, пока ты их дочитываешь, другие сессии начинаются или меняются, список сдвигается примерно на сессию за страницу, поэтому при работающих других агентах строка полноты приблизительна («≈»). `out_of_period` из `session_read` сверху не добавляй: те же события посчитаются дважды. Источник `findings` в состоянии `missing` или `empty` — скажи, каких находок нет.
-- **Служебные сессии** (`system`, `automation`) — не работа человека; выводов о нём по ним не делай. Эту и другие сессии коуча (как их узнать — шаг 1) не разбирай.
+- **Служебные и чужие сессии** — не работа человека; выводов о нём по ним не делай. Узнай их по первой реплике (как сессию коуча, шаг 1) и рабочей папке `cwd`: начинается с `<heartbeat>` — запуск по расписанию; с `# Overview Generate N to M hyperpersonalized suggestions`, `## Memory Writing Agent` или `You are an expert at upholding safety and compliance standards for Codex ambient suggestions`, или `cwd` внутри `~/.codex/memories` — служебная задача Codex; первая строка с путём `/.local/state/orchestrators/` — бриф оркестратора; первая реплика начинается с `<cross-session-message` — сессию открыл другой агент. Эти и сессии коуча не разбирай.
 
 ## Ход разговора
 
@@ -121,6 +121,7 @@ description: Разговор об улучшении работы с Codex ил
 
 ```json
 {"op": "append", "entry": {
+  "client_ref": "3f2b8c1e-7d4a-4f0e-9b6c-2a1d5e8f9c70",
   "topic_key": "scope-creep-engineering",
   "agent": "codex",
   "topic": "Агент делает больше, чем просили",
@@ -138,12 +139,13 @@ description: Разговор об улучшении работы с Codex ил
 ```
 
 - Решение по теме `p2:…` пиши с `findings: ["p2:…"]` — так запись журнала проецируется на предложение реестра и меняет его ось `decision`.
-- `id` и `at` ставит журнал. `topic_key` — устойчивый ключ темы латиницей; для темы, которая уже была в журнале, бери прежний. `topic` нужен у каждого решения, включая `declined` и `not_justified`. Запись проверки содержит только `check_of`, `topic_key`, `agent`, `result`, `observations`, `repeats`, `evidence`; поля решения (`decision`, `layer`, `topic`, `findings`, `target`, `change`, `rollback`, `check`, `check_after`, sha) журнал отклонит.
+- `id` и `at` ставит журнал. `topic_key` — устойчивый ключ темы латиницей; для темы, которая уже была в журнале, бери прежний. `topic` нужен у каждого решения, включая `declined` и `not_justified`. Запись проверки содержит только `client_ref`, `check_of`, `topic_key`, `agent`, `result`, `observations`, `repeats`, `evidence`; поля решения (`decision`, `layer`, `topic`, `findings`, `target`, `change`, `rollback`, `check`, `check_after`, sha) журнал отклонит.
+- `client_ref` — новый UUID на каждую запись, решение или проверку: получи его `uuidgen | tr A-Z a-z` один раз, перед первой отправкой этой записи. Повтор после обрыва, таймаута или ошибки сети — тот же `client_ref` и то же содержимое: журнал второй раз не запишет. Ответ `conflict: entry.client_ref: already recorded with other content` значит, что под этим UUID уже записано другое: перечитай журнал (`coach_journal` `{"op": "read"}`); если прежняя запись есть, новую не пиши; если это действительно другое решение — новый UUID.
 - `agent` — агент, чьи сессии и настройки разбираются (`codex` или `claude`), а не тот, в котором идёт разговор.
 - `declined` и `not_justified`: `layer` может быть `null`; `target`, `change`, `rollback`, `check` не нужны. Цитаты нужны всегда.
 - `applied` и `test`: обязательны `layer`, `change`, `rollback`, `check`, `check_after` (обычно через 7 дней) и `target` (кроме слоя `experience`).
 - `before_sha256` и `after_sha256` — только 64 шестнадцатеричных знака (`shasum -a 256 <файл> | cut -d' ' -f1`); для нового файла `before_sha256` не пиши.
-- Итог проверки — отдельная запись: `{"check_of": "<id>", "topic_key": "<тот же>", "agent": "<тот же>", "result": "not_repeated", "observations": 4}`; для `repeated` — ещё `repeats` (на скольких из `observations` повторилось, дашборд пишет «повторилось на N из M») и `evidence`. Проверок может быть несколько; `read` показывает у изменения последнюю (`result`, `observations`, `repeats`, `checked_at`) и их число (`checks`).
+- Итог проверки — отдельная запись: `{"client_ref": "<uuid>", "check_of": "<id>", "topic_key": "<тот же>", "agent": "<тот же>", "result": "not_repeated", "observations": 4}`; для `repeated` — ещё `repeats` (на скольких из `observations` повторилось, дашборд пишет «повторилось на N из M») и `evidence`. Проверок может быть несколько; `read` показывает у изменения последнюю (`result`, `observations`, `repeats`, `checked_at`) и их число (`checks`).
 
 ## Правила
 
