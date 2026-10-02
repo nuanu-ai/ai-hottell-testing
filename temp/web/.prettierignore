@@ -1,5 +1,0 @@
-dist/
-test-results/
-pnpm-lock.yaml
-src/shared/ui/styles/deploy.css
-src/shared/api/schema.gen.ts

@@ -1,4 +1,0 @@
-model = "gpt-5"
-
-[projects."/Users/someone/work"]
-trust_level = "trusted"

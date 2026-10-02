@@ -1,8 +1,0 @@
-# The user's own Codex config.
-model = "gpt-5"
-
-[projects."/Users/someone/work"]
-trust_level = "trusted"
-
-[mcp_servers.other]
-command = "other-mcp"

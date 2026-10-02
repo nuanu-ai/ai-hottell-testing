@@ -1,5 +1,0 @@
-{
-  "mcpServers": {
-    "hottell": { "type": "stdio", "command": "hottell" }
-  }
-}

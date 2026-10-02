@@ -1,2 +1,0 @@
-{"svc": "codex-app-server", "e": "codex.api_request", "endpoint": "/models", "linked": 0, "n": 50, "convs": 1}
-{"svc": "Codex Desktop", "e": "codex.sse_event", "endpoint": "", "linked": 1, "n": 2, "convs": 1}

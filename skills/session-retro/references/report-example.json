@@ -1,0 +1,253 @@
+{
+  "kind": "deep",
+  "schema_version": 2,
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "analysis_version": "2.0",
+  "previous_report": "",
+  "tasks": [
+    {
+      "task_id": "task-1",
+      "goal": "Починить падающий тест парсера",
+      "goal_evidence": [
+        "L3"
+      ],
+      "scope": "проект example",
+      "start_line": 3,
+      "end_line": 18,
+      "boundary_evidence": [
+        "L3",
+        "L18"
+      ],
+      "success_criteria": [
+        "тест парсера проходит"
+      ],
+      "outcome": "verified",
+      "outcome_basis": [
+        "L17"
+      ],
+      "claims": [
+        {
+          "line": 12,
+          "claim": "Готово, тест исправлен",
+          "verification_at_claim": "unverified",
+          "evidence": [
+            "L12"
+          ],
+          "subsequent_resolution": "Тест запущен и прошёл в L17"
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "D01",
+      "status": "checked_clear",
+      "summary": "Задание выполнено в границах запроса",
+      "evidence": [
+        "L3",
+        "L18"
+      ],
+      "missing_data": [],
+      "task_ids": [
+        "task-1"
+      ]
+    },
+    {
+      "id": "D03",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D05",
+      "status": "suspected",
+      "summary": "Агент заявил «готово» до запуска тестов",
+      "evidence": [
+        "L12"
+      ],
+      "missing_data": [],
+      "task_ids": [
+        "task-1"
+      ]
+    },
+    {
+      "id": "D07",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D10",
+      "status": "suspected",
+      "summary": "Человек повторно просит отвечать коротко",
+      "evidence": [
+        "L3",
+        "L15"
+      ],
+      "missing_data": [],
+      "task_ids": [
+        "task-1"
+      ]
+    },
+    {
+      "id": "D12",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D13",
+      "status": "insufficient_data",
+      "summary": "Нет опубликованных разборов для сравнения",
+      "evidence": [],
+      "missing_data": [
+        "опубликованный корпус Deep 2.0"
+      ],
+      "task_ids": []
+    },
+    {
+      "id": "D16",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D19",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D22",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D24",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D25",
+      "status": "not_applicable",
+      "summary": "Нет признаков, к которым применима проверка",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    },
+    {
+      "id": "D26",
+      "status": "not_checked",
+      "summary": "Не проверено: пример",
+      "evidence": [],
+      "missing_data": [],
+      "task_ids": []
+    }
+  ],
+  "observations": [
+    {
+      "pattern": "повтор команды",
+      "finding": "Одна и та же команда запущена трижды без изменений",
+      "status": "suspected",
+      "evidence": [
+        "L6",
+        "L8",
+        "L10"
+      ],
+      "task_ids": [
+        "task-1"
+      ]
+    }
+  ],
+  "proposal_candidates": [
+    {
+      "proposal_id": "P-1",
+      "group_key": "p2:8e45589530228c820b49",
+      "pattern_id": "S-INSTR-1",
+      "change_intent": "отвечать коротко и простым языком",
+      "action": "Добавить предпочтение в инструкции",
+      "observed": "Человек дважды просит отвечать короче",
+      "cause": "",
+      "alternative_causes": [
+        "разовая усталость"
+      ],
+      "existing_rule": {
+        "status": "not_checked",
+        "description": "",
+        "locator": "",
+        "version": ""
+      },
+      "change_type": "personalization",
+      "selection_reason": "Предпочтение человека, не задачи",
+      "scope": "проект example",
+      "target": {
+        "kind": "personalization",
+        "locator": "",
+        "version": ""
+      },
+      "change": "",
+      "preconditions": [],
+      "exceptions": [],
+      "verification": "",
+      "rollback": "",
+      "expected_effect": "",
+      "priority": "medium",
+      "readiness": {
+        "status": "hypothesis",
+        "reason": "Сначала найти действующее правило"
+      },
+      "decision": {
+        "status": "not_requested",
+        "at": ""
+      },
+      "execution": {
+        "status": "not_applied",
+        "at": "",
+        "version": "",
+        "evidence": []
+      },
+      "effect": {
+        "status": "not_measured",
+        "method": "",
+        "metric": "",
+        "n_before": 0,
+        "n_after": 0,
+        "note": ""
+      },
+      "sources": [
+        {
+          "session_id": "00000000-0000-4000-8000-000000000000",
+          "task_id": "task-1",
+          "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "evidence": [
+            "L3",
+            "L15"
+          ]
+        }
+      ],
+      "analysis_versions": [
+        "2.0"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Принял ли человек результат, в сессии не сказано"
+  ]
+}

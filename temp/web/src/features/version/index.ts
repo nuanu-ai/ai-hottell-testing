@@ -1,1 +1,0 @@
-export { VersionLabel } from './VersionLabel';

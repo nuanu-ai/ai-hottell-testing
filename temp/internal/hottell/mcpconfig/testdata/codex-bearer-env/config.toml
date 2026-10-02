@@ -1,3 +1,0 @@
-[mcp_servers.hottell]
-url = "http://localhost:18081/mcp"
-bearer_token_env_var = "HOTTELL_MCP_KEY"

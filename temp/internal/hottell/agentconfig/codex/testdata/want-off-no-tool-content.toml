@@ -1,9 +1,0 @@
-[otel]
-# Written by hottell, which owns the whole [otel] family; hottell uninstall restores the previous one.
-environment = "hottell"
-exporter = "none"
-trace_exporter = "none"
-metrics_exporter = "none"
-log_user_prompt = false
-log_agent_responses = false
-tool_result.max_bytes = 0

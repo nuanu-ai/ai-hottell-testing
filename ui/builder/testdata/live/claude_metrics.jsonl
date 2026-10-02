@@ -1,5 +1,0 @@
-{"metric": "claude_code.active_time.total", "sid": "11111111-2222-4333-8444-555555555555", "type": "cli", "model": "", "ts": "2026-03-05 12:05:00.000000000", "value": 400.0}
-{"metric": "claude_code.active_time.total", "sid": "11111111-2222-4333-8444-555555555555", "type": "cli", "model": "", "ts": "2026-03-05 12:10:00.000000000", "value": 200.0}
-{"metric": "claude_code.commit.count", "sid": "11111111-2222-4333-8444-555555555555", "type": "", "model": "", "ts": "2026-03-05 12:10:00.000000000", "value": 1.0}
-{"metric": "claude_code.lines_of_code.count", "sid": "11111111-2222-4333-8444-555555555555", "type": "added", "model": "claude-demo", "ts": "2026-03-05 12:10:00.000000000", "value": 10.0}
-{"metric": "claude_code.lines_of_code.count", "sid": "11111111-2222-4333-8444-555555555555", "type": "removed", "model": "claude-demo", "ts": "2026-03-05 12:10:00.000000000", "value": 2.0}

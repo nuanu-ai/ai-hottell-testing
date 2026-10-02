@@ -1,11 +1,5 @@
-.DS_Store
+/local-data/
+/bin/
 .env
 .env.*
-!.env.example
-secrets/
-data/raw/
-local-data/
-*.session
-node_modules/
-.venv/
-__pycache__/
+.DS_Store
