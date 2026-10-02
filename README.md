@@ -1,7 +1,7 @@
 # AI Hottell — установка для тестирования
 
-Актуальный клиент **v0.3.4**, macOS Apple Silicon и Intel. Источник:
-[`nuanu-ai/ai-hottell`, `camp`, `e78f018`](https://github.com/nuanu-ai/ai-hottell/commit/e78f01841199959072c738e765d642bd940c45a3).
+Актуальный клиент **v0.3.6**, macOS Apple Silicon и Intel. Источник:
+[`nuanu-ai/ai-hottell`, `camp`, `76da83c`](https://github.com/nuanu-ai/ai-hottell/commit/76da83c871245b6497c9203f765050cb24d21e4b).
 Дата обновления: 2 октября 2026. Точные данные переноса — [SOURCE.json](SOURCE.json).
 
 ## Установка
@@ -17,7 +17,7 @@ Go, Docker и GitHub-авторизация для готового клиент
 3. Установите закреплённую версию клиента:
 
 ```sh
-curl -fsSL https://github.com/nuanu-ai/ai-hottell-testing/releases/download/v0.3.4/install.sh -o /tmp/hottell-install.sh
+curl -fsSL https://github.com/nuanu-ai/ai-hottell-testing/releases/download/v0.3.6/install.sh -o /tmp/hottell-install.sh
 sh /tmp/hottell-install.sh
 ```
 
@@ -34,7 +34,7 @@ sh /tmp/hottell-install.sh
 ~/.local/bin/hottell status --json
 ```
 
-Ожидаемая версия — `0.3.4`. Проведите короткую новую сессию агента и проверьте,
+Ожидаемая версия — `0.3.6`. Проведите короткую новую сессию агента и проверьте,
 что она появилась в аналитике сервера. Успешное скачивание и установка сами
 по себе не подтверждают поступление телеметрии.
 
@@ -62,6 +62,8 @@ sh /tmp/hottell-install.sh
 ~/.local/bin/hottell restore <имя-набора>
 ```
 
+Перед откатом клиент проверяет целостность всего набора бэкапа. Повреждённый
+или неполный набор отклоняется до остановки службы и изменения конфигов.
 Restore работает без сети и останавливает фоновый процесс до восстановления;
 перед откатом сохраняет текущее состояние. Конфиги-симлинки пропускаются с ошибкой,
 чтобы не затереть их цели. Перезапустите агентов после отката. Изменения конфигов,
@@ -86,7 +88,7 @@ Restore работает без сети и останавливает фоно�
 git clone https://github.com/nuanu-ai/ai-hottell-testing.git
 cd ai-hottell-testing
 mkdir -p bin
-go build -ldflags '-X main.version=0.3.4' -o bin/hottell ./cmd/hottell
+go build -ldflags '-X main.version=0.3.6' -o bin/hottell ./cmd/hottell
 ./bin/hottell install
 ```
 

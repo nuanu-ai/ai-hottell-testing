@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs pinned hottell v0.3.4 from the public testing GitHub Release.
+# Installs pinned hottell v0.3.6 from the public testing GitHub Release.
 #
 # Downloads the binary for this Mac's architecture and SHA256SUMS from GitHub,
 # checks the checksum, removes the quarantine attribute and runs `hottell install`,
@@ -12,7 +12,7 @@
 
 set -eu
 
-origin='https://github.com/nuanu-ai/ai-hottell-testing/releases/download/v0.3.4'
+origin='https://github.com/nuanu-ai/ai-hottell-testing/releases/download/v0.3.6'
 
 fail() {
 	echo "hottell install.sh: $*" >&2

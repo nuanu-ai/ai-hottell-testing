@@ -295,11 +295,47 @@ func (s *Store) read(name string) (Set, bool) {
 	return set, true
 }
 
+// Check finds, without writing anything, the problems of set that Restore or the restore
+// set before it would hit: a path that is not absolute, an entry without a plain copy
+// name, and, for a file that existed and was not a symbolic link at the backup, a missing
+// sha256 or a copy that cannot be read or does not match its sha256. The problems of every
+// entry are joined. It reads only the set, not the configs as they are now: what is at a
+// path now (a link, a directory) and the errors of writing are still Restore's to meet.
+func (s *Store) Check(set Set) error {
+	var errs []error
+	for _, entry := range set.Files {
+		if !filepath.IsAbs(entry.Path) {
+			errs = append(errs, notAbsolute(entry.Path))
+			continue
+		}
+		// TakeBeforeRestore copies every file under its name, whether absent at the backup
+		// or not.
+		if entry.Name == "" || entry.Name == "." || entry.Name == ".." || filepath.Base(entry.Name) != entry.Name {
+			errs = append(errs, fmt.Errorf("the copy name %q of %s in the manifest is not a file name in the set", entry.Name, entry.Path))
+			continue
+		}
+		if entry.Absent || entry.Symlink {
+			continue
+		}
+		if entry.SHA256 == "" {
+			errs = append(errs, fmt.Errorf("%s has no sha256 in the manifest", entry.Path))
+			continue
+		}
+		if _, err := readCopy(filepath.Join(s.Dir, set.Name, entry.Name), entry); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
 // Restore puts every file of set back byte for byte and removes the files that were
 // absent. It never writes, removes or replaces a symbolic link: a path that is one now, or
 // was one at the backup, is skipped and left to the user. A path that is not absolute (an
 // old or a foreign manifest) fails, since it would resolve against the working directory.
-// Every file is attempted; the errors are joined.
+// Every file is attempted; the errors are joined. Restore is not atomic: a file that fails,
+// on a write error or on what is at its path now, leaves the files restored before it as
+// they are. Check, run first, refuses a damaged or incomplete set before anything is
+// written; the restore set TakeBeforeRestore takes undoes a restore that failed midway.
 func (s *Store) Restore(set Set) ([]Outcome, error) {
 	var outcomes []Outcome
 	var errs []error
@@ -321,7 +357,7 @@ func (s *Store) Restore(set Set) ([]Outcome, error) {
 
 func (s *Store) restore(copyPath string, entry Entry) (string, error) {
 	if !filepath.IsAbs(entry.Path) {
-		return "", fmt.Errorf("%s in the manifest is not an absolute path; it is left", entry.Path)
+		return "", notAbsolute(entry.Path)
 	}
 	info, err := os.Lstat(entry.Path)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -343,17 +379,31 @@ func (s *Store) restore(copyPath string, entry Entry) (string, error) {
 		}
 		return DoneRemoved, nil
 	}
-	data, err := os.ReadFile(copyPath) //nolint:gosec // a copy in the store
+	data, err := readCopy(copyPath, entry)
 	if err != nil {
-		return "", fmt.Errorf("read the copy of %s: %w", entry.Path, err)
-	}
-	if digest(data) != entry.SHA256 {
-		return "", fmt.Errorf("the copy of %s does not match its sha256 in the manifest", entry.Path)
+		return "", err
 	}
 	if err := writeFile(entry.Path, data, entry.Mode); err != nil {
 		return "", err
 	}
 	return DoneRestored, nil
+}
+
+// notAbsolute is the error of a manifest path that is not absolute.
+func notAbsolute(path string) error {
+	return fmt.Errorf("%s in the manifest is not an absolute path; it is left", path)
+}
+
+// readCopy returns the copy of entry at copyPath, checked against its sha256.
+func readCopy(copyPath string, entry Entry) ([]byte, error) {
+	data, err := os.ReadFile(copyPath) //nolint:gosec // a copy in the store
+	if err != nil {
+		return nil, fmt.Errorf("read the copy of %s: %w", entry.Path, err)
+	}
+	if digest(data) != entry.SHA256 {
+		return nil, fmt.Errorf("the copy of %s does not match its sha256 in the manifest", entry.Path)
+	}
+	return data, nil
 }
 
 // Changed reports whether any file differs from what hottell last recorded; with nothing

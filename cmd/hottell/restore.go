@@ -45,11 +45,15 @@ func restoreConfigFrom(getenv func(string) string) (installConfig, error) {
 // way uninstall does. It needs neither the network nor the MCP server, so the user can run
 // it when every agent is broken. The installed binary stays.
 //
-// The daemon goes first, or it would apply the settings again over the restored files
-// within a round; when it cannot be stopped, restore touches nothing and tells how to stop
-// it by hand. Before writing, restore copies the files as they are into a restore set, so
-// that restoring that set undoes it. A config that is a symbolic link, or was one at the
-// backup, is skipped and left to the user, and restore then exits 1.
+// The set is checked first: a damaged copy, a path that is not absolute or an incomplete
+// manifest entry refuses it before the daemon is stopped, and nothing changes. The daemon
+// goes next, or it would apply the settings again over the restored files within a round;
+// when it cannot be stopped, restore touches nothing and tells how to stop it by hand.
+// Before writing, restore copies the files as they are into a restore set, so that
+// restoring that set undoes it. The writes are not atomic: an error midway leaves the
+// files restored before it, and that restore set, whose undo command restore prints, is
+// the way back. A config that is a symbolic link, or was one at the backup, is skipped
+// and left to the user, and restore then exits 1.
 func restore(ctx context.Context, cfg installConfig, args []string, stdout, stderr io.Writer) int {
 	var name string
 	list := false
@@ -79,6 +83,10 @@ func restore(ctx context.Context, cfg installConfig, args []string, stdout, stde
 	set, err := pickSet(sets, name)
 	if err != nil {
 		fmt.Fprintf(stderr, "hottell restore: %v (backups are kept in %s)\n", err, store.Dir)
+		return exitFailure
+	}
+	if err := store.Check(set); err != nil {
+		fmt.Fprintf(stderr, "hottell restore: the set %s cannot be restored, nothing was changed: %v\n", set.Name, err)
 		return exitFailure
 	}
 

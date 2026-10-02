@@ -1,11 +1,11 @@
 {
   "repository": "https://github.com/nuanu-ai/ai-hottell",
   "branch": "camp",
-  "commit": "e78f01841199959072c738e765d642bd940c45a3",
-  "release": "v0.3.4",
+  "commit": "76da83c871245b6497c9203f765050cb24d21e4b",
+  "release": "v0.3.6",
   "scope": "macOS client: cmd/hottell, internal/hottell, pkg/deepv2, skills; development tests and fixtures omitted",
   "assets": {
-    "hottell-darwin-arm64": "41c7eb005d65b6b4418da26b4dc47c142a90b545635737cec828eeedebe20f0f",
-    "hottell-darwin-amd64": "8c505430d6e5ad3365fed345c0dd0c41e75e830951f13d840b2b63ce420c95fe"
+    "hottell-darwin-amd64": "be373cfe2e351d9297d2798156db44cf8af728335fb95af364fb1c7ac33cff88",
+    "hottell-darwin-arm64": "7e0b845e3dabb61d586ed844751eafcb445ec0b99ad299c59321426694b2042e"
   }
 }
