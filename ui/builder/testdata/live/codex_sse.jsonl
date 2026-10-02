@@ -1,2 +1,0 @@
-{"ts": "2026-03-05 10:00:03.000000000", "sid": "019cbd6f-b2a0-7aaa-8aaa-aaaaaaaaaaaa", "kind": "response.completed", "model": "gpt-demo", "inp": "1000", "cached": "0", "outp": "10", "reas": "0"}
-{"ts": "2026-03-05 10:00:09.000000000", "sid": "019cbd6f-b2a0-7aaa-8aaa-aaaaaaaaaaaa", "kind": "response.completed", "model": "gpt-demo", "inp": "2000", "cached": "1500", "outp": "20", "reas": "5"}
