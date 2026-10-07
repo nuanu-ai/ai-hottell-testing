@@ -1,0 +1,19 @@
+/* «Как это было» (HT-535): авторы одним весом и скриншоты во всю ширину панели. */
+.story-author {
+  font-weight: 600;
+  color: var(--ink);
+}
+.story-shot {
+  display: block;
+  border: 1px solid var(--line);
+  line-height: 0;
+}
+.story-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.story-shot:hover,
+.story-shot:focus-visible {
+  border-color: var(--accent);
+}

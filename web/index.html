@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>hottell</title>
+    <script>
+      // Theme is set before the first paint, otherwise the page flashes the other scheme.
+      // Copy of initialTheme + resolveTheme in src/shared/lib/theme.ts; theme.test.ts checks they agree.
+      (function () {
+        var theme = 'system';
+        try {
+          var saved = localStorage.getItem('ht-theme');
+          if (saved === 'light' || saved === 'dark') theme = saved;
+        } catch (e) {}
+        if (theme === 'system') {
+          var dark =
+            typeof window.matchMedia !== 'function' ||
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          theme = dark ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>

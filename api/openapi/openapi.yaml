@@ -1,0 +1,3155 @@
+openapi: 3.0.3
+info:
+  title: harness-telemetry API
+  version: 0.1.0
+servers:
+  - url: /api
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Sign in with email and password
+      description: Open without a session. Opens a session and sets its cookie.
+      parameters:
+        - name: User-Agent
+          in: header
+          required: false
+          description: Kept with the session to tell the signed-in browsers apart
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "204":
+          description: Signed in
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+        "401":
+          description: invalid_credentials — wrong email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/passkey/login/begin:
+    post:
+      operationId: beginPasskeyLogin
+      summary: Begin signing in with a passkey
+      description: >-
+        Open without a session. No email is asked: any discoverable passkey of a user
+        answers. Sets the ht_webauthn cookie of the ceremony, which lives 5 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BeginPasskeyLoginRequest"
+      responses:
+        "200":
+          description: The options for navigator.credentials.get
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/WebAuthnCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyOptions"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/passkey/login/finish:
+    post:
+      operationId: finishPasskeyLogin
+      summary: Finish signing in with a passkey
+      description: >-
+        Open without a session. Verifies the answer of the browser against the ceremony
+        of the ht_webauthn cookie, opens a session, sets its cookie and deletes ht_webauthn.
+      parameters:
+        - $ref: "#/components/parameters/UserAgent"
+        - $ref: "#/components/parameters/WebAuthnCeremony"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasskeyCredentialRequest"
+      responses:
+        "204":
+          description: Signed in; Set-Cookie carries ht_session and the deleted ht_webauthn
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+        "400":
+          $ref: "#/components/responses/PasskeyCeremonyFailed"
+        default:
+          $ref: "#/components/responses/Error"
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Sign out
+      description: Closes the session of the request and deletes its cookie.
+      responses:
+        "204":
+          description: Signed out
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+        default:
+          $ref: "#/components/responses/Error"
+  /me:
+    get:
+      operationId: getMe
+      summary: The signed-in user
+      responses:
+        "200":
+          description: The user of the session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/password:
+    post:
+      operationId: changePassword
+      summary: Change the password of the signed-in user
+      description: Needs the current password; closes every other session of the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: Password changed
+        "400":
+          description: wrong_current_password, password_too_short or password_too_long
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/passkeys:
+    get:
+      operationId: listMyPasskeys
+      summary: The passkeys of the signed-in user
+      responses:
+        "200":
+          description: The passkeys, oldest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyList"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/passkeys/register/begin:
+    post:
+      operationId: beginPasskeyRegistration
+      summary: Begin adding a passkey to the signed-in user
+      description: Sets the ht_webauthn cookie of the ceremony, which lives 5 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BeginPasskeyRegistrationRequest"
+      responses:
+        "200":
+          description: The options for navigator.credentials.create
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/WebAuthnCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyOptions"
+        "400":
+          description: invalid_passkey_name — the name is not 1–64 characters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/passkeys/register/finish:
+    post:
+      operationId: finishPasskeyRegistration
+      summary: Finish adding a passkey to the signed-in user
+      description: >-
+        Verifies the answer of the browser against the ceremony of the ht_webauthn cookie,
+        stores the passkey under the name given at the begin and deletes ht_webauthn.
+      parameters:
+        - $ref: "#/components/parameters/WebAuthnCeremony"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasskeyCredentialRequest"
+      responses:
+        "201":
+          description: The passkey added; Set-Cookie carries the deleted ht_webauthn
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/WebAuthnCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyItem"
+        "400":
+          $ref: "#/components/responses/PasskeyCeremonyFailed"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/passkeys/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteMyPasskey
+      summary: Delete a passkey of the signed-in user
+      description: The password stays, so the user can still sign in.
+      responses:
+        "204":
+          description: Passkey deleted
+        "404":
+          description: passkey_not_found — no such passkey of the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/keys:
+    get:
+      operationId: getMyKeys
+      summary: The state of the MCP key and the collector token of the signed-in user
+      responses:
+        "200":
+          description: Whether each key is active, when it was created and last used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeysStatus"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/keys/mcp:
+    post:
+      operationId: issueMyMcpKey
+      summary: Issue the MCP key of the signed-in user
+      description: >-
+        Issues a new MCP key and revokes the one the user had. Its open value is answered
+        once: only its hash is kept.
+      responses:
+        "201":
+          description: The open value of the key and where to connect the agent with it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedMcpKey"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: revokeMyMcpKey
+      summary: Revoke the MCP key of the signed-in user
+      responses:
+        "204":
+          description: Key revoked
+        "404":
+          description: access_key_not_found — the user has no active MCP key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /me/keys/ingest/reissue:
+    post:
+      operationId: reissueMyIngestToken
+      summary: Reissue the collector token of the signed-in user
+      description: >-
+        Issues a new collector token and revokes the one the user had: sending stops on
+        every machine until the binary gets the new token through MCP. The open value is
+        not answered here; only the binary gets it, through MCP.
+      responses:
+        "204":
+          description: Token reissued
+        default:
+          $ref: "#/components/responses/Error"
+  /me/telemetry-settings:
+    get:
+      operationId: getMyTelemetrySettings
+      summary: The deny settings of the signed-in user and their version
+      description: >-
+        The settings in full form, every field with its default included; the defaults and
+        version 0 when the user has never saved settings.
+      responses:
+        "200":
+          description: The settings and their version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionedTelemetrySettings"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      operationId: updateMyTelemetrySettings
+      summary: Save the deny settings of the signed-in user in place of the version they were read at
+      description: >-
+        Saves settings in place of expectedVersion and tells the MCP subscribers of the user.
+        An absent field takes its default. Settings equal to the stored ones keep the version.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTelemetrySettingsRequest"
+      responses:
+        "200":
+          description: The saved settings in full form and their new version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionedTelemetrySettings"
+        "409":
+          description: settings_version_conflict — the settings are no longer at expectedVersion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: invalid_telemetry_settings — the settings break the schema; detail tells where and why
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidTelemetrySettingsError"
+        default:
+          $ref: "#/components/responses/Error"
+  /users:
+    get:
+      operationId: listUsers
+      summary: Every user, invited ones included
+      responses:
+        "200":
+          description: The users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: inviteUser
+      summary: Invite a user
+      description: Creates an invited user and a one-time invitation link that lives 7 days.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteUserRequest"
+      responses:
+        "201":
+          description: The invited user and the invitation link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteUserResponse"
+        "400":
+          description: invalid_email or invalid_name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: email_taken — another user has the email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+    delete:
+      operationId: revokeInvite
+      summary: Revoke the invitation
+      description: Deletes the invited user together with the invitation link.
+      responses:
+        "204":
+          description: Invitation revoked
+        "404":
+          description: user_not_found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: user_not_invited — the user has accepted the invitation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /users/{id}/invite:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+    post:
+      operationId: reissueInvite
+      summary: Reissue the invitation link
+      description: Issues a new invitation link; the previous one stops working.
+      responses:
+        "200":
+          description: The new invitation link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteLink"
+        "404":
+          description: user_not_found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: user_not_invited — the user has accepted the invitation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /users/{id}/password-reset:
+    parameters:
+      - $ref: "#/components/parameters/UserID"
+    post:
+      operationId: issuePasswordReset
+      summary: Issue a password reset link to another active user
+      description: Issues a one-time reset link that lives 7 days; the previous unused one stops working.
+      responses:
+        "200":
+          description: The reset link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetLink"
+        "404":
+          description: user_not_found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: user_not_active — the invitation is not accepted; cannot_reset_self — the own password is changed in the profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /invites/{token}:
+    parameters:
+      - $ref: "#/components/parameters/LinkToken"
+    get:
+      operationId: getInvite
+      summary: The user an invitation link was issued to
+      description: Open without a session.
+      responses:
+        "200":
+          description: The invited user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkHolder"
+        "404":
+          $ref: "#/components/responses/LinkNotFound"
+        "410":
+          $ref: "#/components/responses/LinkGone"
+        default:
+          $ref: "#/components/responses/Error"
+  /invites/{token}/accept:
+    parameters:
+      - $ref: "#/components/parameters/LinkToken"
+    post:
+      operationId: acceptInvite
+      summary: Accept the invitation by setting a password
+      description: Open without a session. Uses the link up, signs the user in and sets the session cookie.
+      parameters:
+        - $ref: "#/components/parameters/UserAgent"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPasswordRequest"
+      responses:
+        "204":
+          description: Invitation accepted, signed in
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+        "400":
+          description: password_too_short or password_too_long
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/LinkNotFound"
+        "410":
+          $ref: "#/components/responses/LinkGone"
+        default:
+          $ref: "#/components/responses/Error"
+  /password-resets/{token}:
+    parameters:
+      - $ref: "#/components/parameters/LinkToken"
+    get:
+      operationId: getPasswordReset
+      summary: The user a password reset link was issued to
+      description: Open without a session.
+      responses:
+        "200":
+          description: The user whose password the link resets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkHolder"
+        "404":
+          $ref: "#/components/responses/LinkNotFound"
+        "410":
+          $ref: "#/components/responses/LinkGone"
+        default:
+          $ref: "#/components/responses/Error"
+  /password-resets/{token}/complete:
+    parameters:
+      - $ref: "#/components/parameters/LinkToken"
+    post:
+      operationId: completePasswordReset
+      summary: Set a new password by the reset link
+      description: >-
+        Open without a session. Uses the link up, closes every session of the user,
+        signs the user in and sets the session cookie.
+      parameters:
+        - $ref: "#/components/parameters/UserAgent"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPasswordRequest"
+      responses:
+        "204":
+          description: Password set, signed in
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SessionCookie"
+        "400":
+          description: password_too_short or password_too_long
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/LinkNotFound"
+        "410":
+          $ref: "#/components/responses/LinkGone"
+        default:
+          $ref: "#/components/responses/Error"
+  /version:
+    get:
+      operationId: getVersion
+      summary: Service build version
+      responses:
+        "200":
+          description: The version the service was built with
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Version"
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/dataset:
+    get:
+      operationId: getAnalyticsDataset
+      summary: The live analytics dataset for the filter
+      description: >-
+        Sessions with a hook event inside the window and the aggregates, cards and summary built
+        over them. Every signed-in user sees every user; user is only a filter.
+      parameters:
+        - name: days
+          in: query
+          required: false
+          description: The window is the last days days; without it the default window
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+        - $ref: "#/components/parameters/AnalyticsAgent"
+        - name: project
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/AnalyticsUser"
+        - name: tz
+          in: query
+          required: false
+          description: >-
+            The browser's zone, an IANA name or an offset ±HH:MM; each session's daily is laid out
+            by its days. UTC days without it.
+          schema:
+            type: string
+            maxLength: 64
+        - name: kind
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AnalyticsSessionKind"
+        - name: If-None-Match
+          in: header
+          required: false
+          description: The ETag of a dataset the client holds; the same dataset answers 304
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The dataset
+          headers:
+            ETag:
+              description: Identifies this dataset's body; the same body has the same ETag
+              schema:
+                type: string
+            Cache-Control:
+              description: private, no-cache — the browser keeps the body and asks again each time
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsDataset"
+        "304":
+          description: The dataset If-None-Match names is still the current one
+          headers:
+            ETag:
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+        "400":
+          description: invalid_filter — a parameter is out of range; message names it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/team:
+    get:
+      operationId: getAnalyticsTeam
+      summary: Every person's numbers for «Команда»
+      description: >-
+        One row per person with sessions in the period, counted as «Обзор» counts one person's
+        sessions; no sessions and no aggregates. Built from the dataset of everyone for the period,
+        which the server caches; agent, project and kind only choose its sessions.
+      parameters:
+        - name: days
+          in: query
+          required: false
+          description: The period is the last days days; 365 without it
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+        - $ref: "#/components/parameters/AnalyticsAgent"
+        - name: project
+          in: query
+          required: false
+          description: A project's name; «без проекта» chooses the sessions without one
+          schema:
+            type: string
+        - name: kind
+          in: query
+          required: false
+          description: work (the default) leaves the service sessions out, all keeps them
+          schema:
+            type: string
+            enum: [work, all]
+      responses:
+        "200":
+          description: The people and what the filters of the page need
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsTeam"
+        "400":
+          description: invalid_filter — a parameter is out of range; message names it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/sessions/{id}:
+    get:
+      operationId: getAnalyticsSession
+      summary: The timeline of one session
+      description: >-
+        id is the agent's session id, not ours; agent and user tell apart sessions that share it.
+        not_found — no such session; ambiguous_session (409) — several sessions match, pass agent and user.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/AnalyticsAgent"
+        - $ref: "#/components/parameters/AnalyticsUser"
+      responses:
+        "200":
+          description: The timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsTimeline"
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/pulse:
+    get:
+      operationId: getAnalyticsPulse
+      summary: Hook events of the last 10 minutes and the running sessions
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsUser"
+        - $ref: "#/components/parameters/AnalyticsAgent"
+      responses:
+        "200":
+          description: The pulse; on a read failure bars and active are empty and error says why
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsPulse"
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/delivery:
+    get:
+      operationId: getAnalyticsDelivery
+      summary: How sending works for a user, by what the server knows
+      description: For user when given, else for the signed-in user.
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsUser"
+      responses:
+        "200":
+          description: The delivery status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsDelivery"
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/hidden-topics:
+    get:
+      operationId: listHiddenTopics
+      summary: The topics the signed-in user marked «not a problem»
+      responses:
+        "200":
+          description: The hidden topic keys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiddenTopics"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: clearHiddenTopics
+      summary: Show all hidden topics of the signed-in user again
+      responses:
+        "204":
+          description: No topic is hidden any more
+        default:
+          $ref: "#/components/responses/Error"
+  /analytics/hidden-topics/{key}:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        description: The topic key, a card id
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+    put:
+      operationId: hideTopic
+      summary: Hide a topic for the signed-in user
+      responses:
+        "204":
+          description: Hidden; hiding a hidden topic again is not an error
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: unhideTopic
+      summary: Show a hidden topic again
+      responses:
+        "204":
+          description: Shown; showing a topic that was not hidden is not an error
+        default:
+          $ref: "#/components/responses/Error"
+  /deep/reports:
+    get:
+      operationId: listDeepReports
+      summary: Published Deep reports
+      description: Every signed-in user reads the reports of every user; user is only a filter.
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsUser"
+        - $ref: "#/components/parameters/AnalyticsAgent"
+        - $ref: "#/components/parameters/PeriodFrom"
+        - $ref: "#/components/parameters/PeriodTo"
+      responses:
+        "200":
+          description: The reports, the newest published first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeepReportList"
+        default:
+          $ref: "#/components/responses/Error"
+  /deep/reports/{sessionId}:
+    get:
+      operationId: getDeepReport
+      summary: The Deep report of a session
+      description: >-
+        The published report and the unchecked candidate, if any. not_found — the session has neither;
+        ambiguous_session (409) — several sessions match, pass agent and user.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/AnalyticsUser"
+        - $ref: "#/components/parameters/AnalyticsAgent"
+      responses:
+        "200":
+          description: The report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeepReport"
+        default:
+          $ref: "#/components/responses/Error"
+  /proposals:
+    get:
+      operationId: listProposals
+      summary: The proposal registry
+      description: Each user has their own registry; every signed-in user reads all of them.
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsUser"
+        - name: readiness
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProposalReadiness"
+        - name: decision
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProposalDecisionStatus"
+      responses:
+        "200":
+          description: The proposals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalList"
+        default:
+          $ref: "#/components/responses/Error"
+  /proposals/{userId}/{proposalId}:
+    parameters:
+      - $ref: "#/components/parameters/ProposalUserID"
+      - $ref: "#/components/parameters/ProposalID"
+    get:
+      operationId: getProposal
+      summary: One proposal of a user's registry
+      responses:
+        "200":
+          description: The proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proposal"
+        default:
+          $ref: "#/components/responses/Error"
+  /proposals/{userId}/{proposalId}/decisions:
+    parameters:
+      - $ref: "#/components/parameters/ProposalUserID"
+      - $ref: "#/components/parameters/ProposalID"
+    post:
+      operationId: decideProposal
+      summary: Record the owner's decision on a proposal
+      description: >-
+        Writes a decision event to the decision journal with authority_ref web:<user id>.
+        forbidden (403) — only the registry's owner decides; decision_after_application (409) —
+        cannot change decision after application.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "201":
+          description: Recorded; the proposal as the registry now projects it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proposal"
+        default:
+          $ref: "#/components/responses/Error"
+  /journal:
+    get:
+      operationId: getJournal
+      summary: The decision journal («Fixed») and the improvement cycle counters
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsUser"
+        - $ref: "#/components/parameters/PeriodFrom"
+        - $ref: "#/components/parameters/PeriodTo"
+      responses:
+        "200":
+          description: The folded entries, the newest first, and the counters of the period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Journal"
+        default:
+          $ref: "#/components/responses/Error"
+  /journal/verify:
+    get:
+      operationId: verifyJournal
+      summary: Check the hash chain of the decision journal
+      responses:
+        "200":
+          description: The result of the check
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalVerification"
+        default:
+          $ref: "#/components/responses/Error"
+  /skill-opportunities:
+    get:
+      operationId: getSkillOpportunities
+      summary: The current skill opportunities report of a user
+      description: For user when given, else for the signed-in user.
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsUser"
+      responses:
+        "200":
+          description: The report, or report null when the user has none
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillOpportunities"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  parameters:
+    AnalyticsAgent:
+      name: agent
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/AnalyticsAgent"
+    AnalyticsUser:
+      name: user
+      in: query
+      required: false
+      description: A filter by user, not an access check; every signed-in user sees every user
+      schema:
+        type: string
+        format: uuid
+    PeriodFrom:
+      name: from
+      in: query
+      required: false
+      description: Start of the period, inclusive
+      schema:
+        type: string
+        format: date-time
+    PeriodTo:
+      name: to
+      in: query
+      required: false
+      description: End of the period, exclusive
+      schema:
+        type: string
+        format: date-time
+    ProposalUserID:
+      name: userId
+      in: path
+      required: true
+      description: The owner of the registry
+      schema:
+        type: string
+        format: uuid
+    ProposalID:
+      name: proposalId
+      in: path
+      required: true
+      description: The proposal id, p2:<20 hex>
+      schema:
+        type: string
+        pattern: "^p2:[0-9a-f]{20}$"
+    UserID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LinkToken:
+      name: token
+      in: path
+      required: true
+      description: The token of a one-time link; never written to logs
+      schema:
+        type: string
+    UserAgent:
+      name: User-Agent
+      in: header
+      required: false
+      description: Kept with the session to tell the signed-in browsers apart
+      schema:
+        type: string
+    WebAuthnCeremony:
+      name: ht_webauthn
+      in: cookie
+      required: false
+      description: The ceremony begun by the matching begin operation; without it the answer is passkey_ceremony_expired
+      schema:
+        type: string
+  headers:
+    WebAuthnCookie:
+      description: The ht_webauthn cookie of a WebAuthn ceremony, HttpOnly, SameSite=Strict and Path=/api; set on begin, deleted on finish
+      schema:
+        type: string
+    SessionCookie:
+      description: The ht_session cookie, HttpOnly and SameSite=Lax; set on sign-in, cleared on sign-out
+      schema:
+        type: string
+  responses:
+    PasskeyCeremonyFailed:
+      description: >-
+        passkey_verification_failed — the answer of the browser does not verify;
+        passkey_ceremony_expired — no ceremony, or it expired or was finished already
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    LinkNotFound:
+      description: link_not_found — no such link
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    LinkGone:
+      description: link_used or link_expired — the link cannot be used any more
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Error:
+      description: Any 4xx or 5xx answer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+    BeginPasskeyLoginRequest:
+      type: object
+    BeginPasskeyRegistrationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+    PasskeyOptions:
+      type: object
+      required: [options]
+      properties:
+        options:
+          type: object
+          additionalProperties: true
+          description: The publicKey member of the options the browser passes to the authenticator
+    PasskeyCredentialRequest:
+      type: object
+      required: [credential]
+      properties:
+        credential:
+          type: object
+          additionalProperties: true
+          description: The PublicKeyCredential of the browser, serialized to JSON
+    PasskeyItem:
+      type: object
+      required: [id, name, createdAt, lastUsedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PasskeyList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PasskeyItem"
+    KeyStatus:
+      type: object
+      required: [active, createdAt, lastUsedAt]
+      properties:
+        active:
+          type: boolean
+          description: The user has an active key of this kind
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the active key was created; null when there is none
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the active key was last used, recorded at most once a minute; null until it is used or when there is none
+    KeysStatus:
+      type: object
+      required: [mcp, ingest]
+      properties:
+        mcp:
+          $ref: "#/components/schemas/KeyStatus"
+        ingest:
+          $ref: "#/components/schemas/KeyStatus"
+    IssuedMcpKey:
+      type: object
+      required: [key, mcpUrl, serverName]
+      properties:
+        key:
+          type: string
+          description: The open value of the MCP key; shown once and never answered again
+        mcpUrl:
+          type: string
+          description: The address of the MCP server, <HT_PUBLIC_ORIGIN>/mcp
+        serverName:
+          type: string
+          description: The name the MCP server is added to the agent under, hottell
+    VersionedTelemetrySettings:
+      type: object
+      required: [settings, version]
+      properties:
+        settings:
+          $ref: "#/components/schemas/TelemetrySettings"
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: The version of the settings, kept by the server; 0 before the first save
+    UpdateTelemetrySettingsRequest:
+      type: object
+      required: [settings, expectedVersion]
+      properties:
+        settings:
+          $ref: "#/components/schemas/TelemetrySettings"
+        expectedVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: The version the settings were read at
+    InvalidTelemetrySettingsError:
+      type: object
+      required: [code, message, detail]
+      properties:
+        code:
+          type: string
+          description: invalid_telemetry_settings
+        message:
+          type: string
+          description: Human-readable description
+        detail:
+          type: string
+          description: Where in the settings and why they break the schema, e.g. agents.claude.hook_events.denied[0] unknown hook event
+    TelemetrySettings:
+      description: >-
+        The deny settings document of a user, as docs/specs/hottell-contract/settings.schema.json
+        describes it. An absent field takes its default: everything is sent, history is not
+        backfilled. The server checks the document itself, so the handler takes it as is.
+      type: object
+      additionalProperties: false
+      # The generated package imports encoding/json already.
+      x-go-type: json.RawMessage
+      properties:
+        version:
+          type: integer
+          minimum: 0
+          default: 0
+          description: The version of the settings; kept by the server, never set by the client
+        agents:
+          type: object
+          additionalProperties: false
+          properties:
+            claude:
+              $ref: "#/components/schemas/ClaudeTelemetrySettings"
+            codex:
+              $ref: "#/components/schemas/CodexTelemetrySettings"
+        folders:
+          $ref: "#/components/schemas/FolderRules"
+        backfill_history:
+          type: boolean
+          default: false
+          description: Kind 7 "backfill history"
+    ClaudeTelemetrySettings:
+      type: object
+      description: What is denied of Claude Code
+      additionalProperties: false
+      properties:
+        enabled:
+          type: boolean
+          default: true
+          description: Kind 1 "agent"; false turns the agent off entirely
+        sources:
+          $ref: "#/components/schemas/TelemetrySources"
+        hook_events:
+          type: object
+          description: Kind 3 "hook event"; the denied hook_event_name of the agent
+          additionalProperties: false
+          properties:
+            denied:
+              type: array
+              uniqueItems: true
+              default: []
+              items:
+                $ref: "#/components/schemas/ClaudeHookEvent"
+        hook_fields:
+          $ref: "#/components/schemas/DeniedHookFields"
+        native_content:
+          $ref: "#/components/schemas/DeniedNativeContent"
+    CodexTelemetrySettings:
+      type: object
+      description: What is denied of Codex CLI
+      additionalProperties: false
+      properties:
+        enabled:
+          type: boolean
+          default: true
+          description: Kind 1 "agent"; false turns the agent off entirely
+        sources:
+          $ref: "#/components/schemas/TelemetrySources"
+        hook_events:
+          type: object
+          description: Kind 3 "hook event"; the denied hook_event_name of the agent
+          additionalProperties: false
+          properties:
+            denied:
+              type: array
+              uniqueItems: true
+              default: []
+              items:
+                $ref: "#/components/schemas/CodexHookEvent"
+        hook_fields:
+          $ref: "#/components/schemas/DeniedHookFields"
+        native_content:
+          $ref: "#/components/schemas/DeniedNativeContent"
+    TelemetrySources:
+      type: object
+      description: Kind 2 "source"; false turns a source off
+      additionalProperties: false
+      properties:
+        hooks:
+          type: boolean
+          default: true
+        transcripts:
+          type: boolean
+          default: true
+        native_metrics:
+          type: boolean
+          default: true
+        native_logs:
+          type: boolean
+          default: true
+        native_traces:
+          type: boolean
+          default: true
+    DeniedHookFields:
+      type: object
+      description: Kind 4 "hook event field"; the denied top-level fields
+      additionalProperties: false
+      properties:
+        denied:
+          type: array
+          uniqueItems: true
+          default: []
+          items:
+            $ref: "#/components/schemas/HookField"
+    DeniedNativeContent:
+      type: object
+      description: Kind 6 "native OTel content category"
+      additionalProperties: false
+      properties:
+        denied:
+          type: array
+          uniqueItems: true
+          default: []
+          items:
+            $ref: "#/components/schemas/NativeContentCategory"
+    FolderRules:
+      type: object
+      description: Kind 5 "project folder", shared by both agents
+      additionalProperties: false
+      properties:
+        denied:
+          type: array
+          uniqueItems: true
+          default: []
+          items:
+            $ref: "#/components/schemas/FolderPattern"
+        allowed:
+          type: array
+          uniqueItems: true
+          default: []
+          items:
+            $ref: "#/components/schemas/FolderPattern"
+    ClaudeHookEvent:
+      type: string
+      enum:
+        - SessionStart
+        - Setup
+        - InstructionsLoaded
+        - UserPromptSubmit
+        - UserPromptExpansion
+        - MessageDisplay
+        - PreToolUse
+        - PermissionRequest
+        - PermissionDenied
+        - PostToolUse
+        - PostToolUseFailure
+        - PostToolBatch
+        - Notification
+        - SubagentStart
+        - SubagentStop
+        - TaskCreated
+        - TaskCompleted
+        - Stop
+        - StopFailure
+        - TeammateIdle
+        - ConfigChange
+        - CwdChanged
+        - DirectoryAdded
+        - FileChanged
+        - WorktreeCreate
+        - WorktreeRemove
+        - PreCompact
+        - PostCompact
+        - PreModelSwitch
+        - PostModelSwitch
+        - Elicitation
+        - ElicitationResult
+        - SessionEnd
+    CodexHookEvent:
+      type: string
+      enum:
+        - SessionStart
+        - SessionEnd
+        - UserPromptSubmit
+        - PreToolUse
+        - PermissionRequest
+        - PostToolUse
+        - PreCompact
+        - PostCompact
+        - SubagentStart
+        - SubagentStop
+        - Stop
+        - Interrupt
+    HookField:
+      type: string
+      pattern: "^[A-Za-z_][A-Za-z0-9_]*$"
+      not:
+        enum: [session_id, hook_event_name, cwd]
+      description: A top-level field name; the service fields session_id, hook_event_name and cwd cannot be denied
+    NativeContentCategory:
+      type: string
+      enum: [prompts, assistant_responses, tool_details, tool_content, raw_api_bodies]
+    FolderPattern:
+      type: string
+      pattern: "^(/|~/)"
+      description: A path pattern starting with / or ~/; ** matches any number of segments
+    UserListItem:
+      type: object
+      required: [id, email, name, status, createdAt, lastLoginAt, inviteExpiresAt, isMe]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [invited, active]
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        inviteExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Expiry of the unused invitation, past or not; null for an active user
+        isMe:
+          type: boolean
+          description: The user is the signed-in one
+    UserList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserListItem"
+    InviteUserRequest:
+      type: object
+      required: [email, name]
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+    InviteUserResponse:
+      type: object
+      required: [user, inviteUrl, expiresAt]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserListItem"
+        inviteUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    InviteLink:
+      type: object
+      required: [inviteUrl, expiresAt]
+      properties:
+        inviteUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    ResetLink:
+      type: object
+      required: [resetUrl, expiresAt]
+      properties:
+        resetUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    LinkHolder:
+      type: object
+      required: [email, name]
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+    SetPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+    Me:
+      type: object
+      required: [id, email, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+    Version:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: string
+    Error:
+      description: The common body of every 4xx and 5xx response
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code, e.g. not_found
+        message:
+          type: string
+          description: Human-readable description
+    AnalyticsAgent:
+      type: string
+      enum: [claude, codex]
+    AnalyticsSessionKind:
+      type: string
+      description: >-
+        system — a service task of Codex; agent — a session another agent started (a codex exec
+        run, a first prompt that is a cross-session message or an orchestrator's brief);
+        automation — a <heartbeat> prompt; user — the rest
+      enum: [system, agent, automation, user]
+    AnalyticsSeverity:
+      type: string
+      enum: [bad, warn, info]
+    AnalyticsDataset:
+      description: >-
+        The live dataset: the colleague's dataset.json in our form. Unknown is null, never 0.
+        Aggregates are built over the filtered sessions; by_session lets the page recount a subset.
+      type: object
+      required:
+        - schema_version
+        - variant
+        - generated_at
+        - window
+        - filter
+        - facets
+        - summary
+        - pricing
+        - gaps
+        - sessions
+        - tools
+        - mcp
+        - commands
+        - permissions
+        - friction
+        - skills
+        - findings
+        - done
+        - checks_catalog
+      properties:
+        schema_version:
+          type: integer
+        variant:
+          type: string
+          enum: [live]
+        generated_at:
+          type: string
+          format: date-time
+        window:
+          $ref: "#/components/schemas/AnalyticsWindow"
+        filter:
+          $ref: "#/components/schemas/AnalyticsFilter"
+        facets:
+          $ref: "#/components/schemas/AnalyticsFacets"
+        summary:
+          $ref: "#/components/schemas/AnalyticsSummary"
+        pricing:
+          $ref: "#/components/schemas/AnalyticsPricing"
+        gaps:
+          type: array
+          description: What is not collected and why
+          items:
+            type: string
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsSession"
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsToolRow"
+        mcp:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsMcpRow"
+        commands:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsCommandRow"
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsPermissionRow"
+        friction:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsFriction"
+        skills:
+          $ref: "#/components/schemas/AnalyticsSkills"
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsFinding"
+        done:
+          type: array
+          description: Applied changes with their effect; empty in the live variant
+          items:
+            type: object
+            additionalProperties: true
+        checks_catalog:
+          type: array
+          description: The catalogue of checks; empty in the live variant
+          items:
+            $ref: "#/components/schemas/AnalyticsCheckDef"
+    AnalyticsTeam:
+      description: >-
+        «Команда» for the period: each person's numbers over their chosen sessions. Unknown is null,
+        never 0.
+      type: object
+      required: [generated_at, window, people, projects, has_system, gaps, session_gaps]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        window:
+          description: The period; for «Всё», the window of the dataset
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsWindow"
+        people:
+          description: The people with a chosen session, in no order
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsTeamPerson"
+        projects:
+          description: >-
+            The projects of every session of the dataset (twice the period), whatever agent,
+            project and kind say, for the filter of projects; «без проекта» stands for the
+            sessions without one
+          type: array
+          items:
+            type: string
+        has_system:
+          description: A session of the dataset is a service one, so the filter of them matters
+          type: boolean
+        gaps:
+          description: The dataset's notes that are not about one session
+          type: array
+          items:
+            type: string
+        session_gaps:
+          description: How many of the dataset's notes are about one session; they stay in its timeline
+          type: integer
+    AnalyticsTeamPerson:
+      type: object
+      required:
+        - user_id
+        - user_name
+        - sessions
+        - user_min
+        - agent_min
+        - cost_usd
+        - cost_partial
+        - error_rate
+        - friction_sessions
+        - last_active
+        - pulse
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        sessions:
+          description: The chosen sessions of kind user
+          type: integer
+        user_min:
+          description: The person's minutes over the sessions that are neither automation nor agent
+          type: number
+          format: double
+          nullable: true
+        agent_min:
+          description: The agent's active minutes over the same sessions
+          type: number
+          format: double
+          nullable: true
+        cost_usd:
+          description: The cost of the chosen sessions with a known cost; null when none has one
+          type: number
+          format: double
+          nullable: true
+        cost_partial:
+          description: Some chosen session has no cost, so cost_usd is a lower bound
+          type: boolean
+        error_rate:
+          description: Tool errors over the calls with a known outcome; null without such calls
+          type: number
+          format: double
+          nullable: true
+        friction_sessions:
+          description: The chosen sessions with a friction signal
+          type: integer
+        last_active:
+          description: The latest end, or start without one, of the chosen sessions
+          type: string
+          format: date-time
+        pulse:
+          description: >-
+            The person's hook events by hour over the 5 whole UTC days before today, whatever the
+            filter; null when the telemetry store could not be read
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsTeamPulse"
+          nullable: true
+    AnalyticsTeamPulse:
+      description: >-
+        Hook events of one person by hour over [from, to), all agents; read once a UTC day for
+        everyone and kept until midnight
+      type: object
+      required: [from, to, bucket, values]
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        bucket:
+          type: string
+          enum: [hour]
+        values:
+          description: One count per hour from `from`, oldest first, 120 of them; 0 for an hour without events
+          type: array
+          items:
+            type: integer
+    AnalyticsWindow:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+    AnalyticsFilter:
+      description: The filter the dataset was built for, with its defaults filled in
+      type: object
+      required: [days, kind]
+      properties:
+        days:
+          type: integer
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        project:
+          type: string
+        user:
+          type: string
+          format: uuid
+        kind:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsSessionKind"
+    AnalyticsFacets:
+      description: The values the filter can take in the window
+      type: object
+      required: [agents, projects, users, kinds]
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsAgent"
+        projects:
+          type: array
+          items:
+            type: string
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsUserRef"
+        kinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsSessionKind"
+    AnalyticsUserRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    AnalyticsSummary:
+      type: object
+      required: [coverage, funnel, period]
+      properties:
+        coverage:
+          $ref: "#/components/schemas/AnalyticsCoverage"
+        funnel:
+          $ref: "#/components/schemas/AnalyticsFunnel"
+        period:
+          $ref: "#/components/schemas/AnalyticsPeriodTotals"
+    AnalyticsCoverage:
+      description: «Data completeness» — hooks from the start, known call outcome, recorded cost
+      type: object
+      required: [sessions, hooks_full, calls, outcome_known, cost_known, cost_usd, cost_basis]
+      properties:
+        sessions:
+          type: integer
+        hooks_full:
+          type: integer
+          description: Sessions whose hooks are recorded from the start
+        calls:
+          type: integer
+        outcome_known:
+          type: integer
+          description: Calls with a known outcome
+        cost_known:
+          type: integer
+          description: Sessions with a recorded or estimated cost
+        cost_usd:
+          type: number
+          nullable: true
+        cost_basis:
+          type: string
+          nullable: true
+          description: otel_reported when every cost is recorded by Claude, else estimate; null without cost
+    AnalyticsFunnel:
+      description: The first three steps of the improvement cycle
+      type: object
+      required: [sessions, signals, topics]
+      properties:
+        sessions:
+          type: integer
+          description: Sessions of kind user and automation
+        signals:
+          type: integer
+          description: Friction episodes
+        topics:
+          type: integer
+          description: Cards whose scope is not collection
+    AnalyticsPeriodTotals:
+      description: Sums over the days inside the window
+      type: object
+      required: [cost_usd, agent_min, user_min]
+      properties:
+        cost_usd:
+          type: number
+          nullable: true
+        agent_min:
+          type: number
+        user_min:
+          type: number
+          nullable: true
+          description: The person's time; sessions of kind agent do not count
+    AnalyticsPricing:
+      description: An estimate, not a bill
+      type: object
+      required: [basis, note, models]
+      properties:
+        basis:
+          type: string
+        note:
+          type: string
+        models:
+          type: object
+          description: USD per million tokens by model
+          additionalProperties:
+            $ref: "#/components/schemas/AnalyticsModelPrice"
+    AnalyticsModelPrice:
+      type: object
+      required: [input, cached, output]
+      properties:
+        input:
+          type: number
+        cached:
+          type: number
+        output:
+          type: number
+    AnalyticsTokens:
+      type: object
+      required: [input, cached, output, reasoning]
+      properties:
+        input:
+          type: integer
+          format: int64
+        cached:
+          type: integer
+          format: int64
+        output:
+          type: integer
+          format: int64
+        reasoning:
+          type: integer
+          format: int64
+          nullable: true
+          description: null when the source does not report reasoning tokens (Claude)
+    AnalyticsSources:
+      type: object
+      required: [hooks, otel, transcript]
+      properties:
+        hooks:
+          type: string
+          description: recorded, or partial when only the tail of the session is recorded
+          enum: [recorded, partial]
+        otel:
+          type: string
+          description: Claude — recorded or missing; Codex — linked or unlinked
+          enum: [recorded, missing, linked, unlinked]
+        transcript:
+          type: string
+          description: Whether the server read facts from the agent's transcript
+        transcript_facts:
+          type: string
+          description: recorded when hottell read facts (exit codes, per-turn tokens) from the session's journal
+    AnalyticsDaily:
+      description: One UTC day of a session
+      type: object
+      required: [date, cost_usd, reqs, tok, agent_min, user_min, calls, errors]
+      properties:
+        date:
+          type: string
+          format: date
+        cost_usd:
+          type: number
+          nullable: true
+        reqs:
+          type: integer
+          nullable: true
+        tok:
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsTokens"
+          nullable: true
+        agent_min:
+          type: number
+        user_min:
+          type: number
+          nullable: true
+        calls:
+          type: integer
+        errors:
+          type: integer
+    AnalyticsSession:
+      description: One session; the key is (user_id, agent, id)
+      type: object
+      required:
+        - id
+        - short
+        - agent
+        - user_id
+        - user_name
+        - host
+        - records
+        - project
+        - cwd
+        - branch
+        - start
+        - end
+        - wall_min
+        - active_min
+        - user_min
+        - turns
+        - prompts
+        - corrections
+        - reqs
+        - model
+        - cache_hit
+        - cost_usd
+        - cost_basis
+        - calls
+        - errors
+        - unknown_results
+        - outcome_known
+        - commits
+        - prs
+        - added
+        - removed
+        - first
+        - title
+        - flags
+        - compactions
+        - aborted
+        - waits
+        - wait_min
+        - kind
+        - kind_reason
+        - sources
+        - daily
+      properties:
+        id:
+          type: string
+          description: The agent's session id
+        short:
+          type: string
+          description: The first 8 and the last 4 characters of id
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        host:
+          type: string
+        records:
+          type: integer
+          description: Hook events of the session
+        project:
+          type: string
+        cwd:
+          type: string
+        branch:
+          type: string
+          nullable: true
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        wall_min:
+          type: number
+        active_min:
+          type: number
+        user_min:
+          type: number
+          nullable: true
+        turns:
+          type: integer
+        prompts:
+          type: integer
+        corrections:
+          type: integer
+          nullable: true
+        reqs:
+          type: integer
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        tok:
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsTokens"
+          nullable: true
+        cache_hit:
+          type: number
+          nullable: true
+        cost_usd:
+          type: number
+          nullable: true
+        cost_basis:
+          type: string
+          nullable: true
+        calls:
+          type: integer
+        errors:
+          type: integer
+        unknown_results:
+          type: integer
+        outcome_known:
+          type: integer
+        commits:
+          type: integer
+        prs:
+          type: integer
+        added:
+          type: integer
+          nullable: true
+        removed:
+          type: integer
+          nullable: true
+        first:
+          type: string
+          description: The first prompt, up to 200 characters
+        title:
+          type: string
+        flags:
+          type: array
+          items:
+            type: string
+        compactions:
+          type: integer
+        aborted:
+          type: integer
+        waits:
+          type: integer
+        wait_min:
+          type: number
+          nullable: true
+        kind:
+          $ref: "#/components/schemas/AnalyticsSessionKind"
+        kind_reason:
+          type: string
+          nullable: true
+        sources:
+          $ref: "#/components/schemas/AnalyticsSources"
+        daily:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsDaily"
+    AnalyticsCallCounts:
+      type: object
+      required: [calls, errors, unknown]
+      properties:
+        calls:
+          type: integer
+        errors:
+          type: integer
+        unknown:
+          type: integer
+    AnalyticsRunCounts:
+      type: object
+      required: [runs, failed, unknown]
+      properties:
+        runs:
+          type: integer
+        failed:
+          type: integer
+        unknown:
+          type: integer
+    AnalyticsToolRow:
+      type: object
+      required: [name, kind, server, calls, errors, unknown, p50_s, p95_s, by_session]
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [builtin, mcp, nested]
+        server:
+          type: string
+          nullable: true
+        calls:
+          type: integer
+        errors:
+          type: integer
+        unknown:
+          type: integer
+        p50_s:
+          type: number
+          nullable: true
+        p95_s:
+          type: number
+          nullable: true
+        by_session:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AnalyticsCallCounts"
+    AnalyticsMcpRow:
+      type: object
+      required: [server, calls, errors, unknown, avg_s, by_session]
+      properties:
+        server:
+          type: string
+        calls:
+          type: integer
+        errors:
+          type: integer
+        unknown:
+          type: integer
+        avg_s:
+          type: number
+          nullable: true
+        by_session:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AnalyticsCallCounts"
+    AnalyticsCommandRow:
+      type: object
+      required: [cmd, project, runs, failed, unknown, p95_s, total_min, by_session]
+      properties:
+        cmd:
+          type: string
+        project:
+          type: string
+        runs:
+          type: integer
+        failed:
+          type: integer
+        unknown:
+          type: integer
+        p95_s:
+          type: number
+          nullable: true
+        total_min:
+          type: number
+        by_session:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AnalyticsRunCounts"
+    AnalyticsPermissionRow:
+      type: object
+      required: [label, count, by_session]
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+        by_session:
+          type: object
+          additionalProperties:
+            type: integer
+    AnalyticsEvidence:
+      type: object
+      required: [sid, line, at]
+      properties:
+        sid:
+          type: string
+        line:
+          type: integer
+          description: The event's number in its session timeline, from 1
+        at:
+          type: string
+          nullable: true
+        text:
+          type: string
+    AnalyticsFriction:
+      type: object
+      required: [key, name, how, sev, sessions, by_session, count, cost_usd, evidence]
+      properties:
+        key:
+          type: string
+          description: retry, thrash, mcpfail, coldcache, compact, reread, wait, abort
+        name:
+          type: string
+        how:
+          type: string
+        sev:
+          $ref: "#/components/schemas/AnalyticsSeverity"
+        sessions:
+          type: array
+          items:
+            type: string
+        by_session:
+          type: object
+          description: Episodes by session
+          additionalProperties:
+            type: integer
+        count:
+          type: integer
+          nullable: true
+        cost_usd:
+          type: number
+          nullable: true
+          description: The cost of the episodes themselves; only signals with an attributable cost
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsEvidence"
+    AnalyticsSkills:
+      type: object
+      required: [available, rows]
+      properties:
+        available:
+          type: integer
+          nullable: true
+          description: null until the snapshot of available skills is collected
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsSkillRow"
+        gantt:
+          $ref: "#/components/schemas/AnalyticsGantt"
+    AnalyticsSkillRow:
+      type: object
+      required:
+        - name
+        - source
+        - activations
+        - sessions
+        - by_session
+        - first_line
+        - to_code_min
+        - corrections_after
+        - subagents
+        - size_ktok
+        - state
+        - evidence
+      properties:
+        name:
+          type: string
+        source:
+          type: string
+        activations:
+          type: integer
+        sessions:
+          type: array
+          items:
+            type: string
+        by_session:
+          type: object
+          additionalProperties:
+            type: integer
+        first_line:
+          type: integer
+          nullable: true
+        to_code_min:
+          type: number
+          nullable: true
+        corrections_after:
+          type: integer
+          nullable: true
+        subagents:
+          type: integer
+        size_ktok:
+          type: number
+          nullable: true
+        state:
+          type: string
+          enum: [used, noisy, slow, unused, conflict]
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsEvidence"
+    AnalyticsGantt:
+      description: Skills, subagents and MCP of one session over time; absent when no session has any
+      type: object
+      required: [sid, title, from, to, rows, marks]
+      properties:
+        sid:
+          type: string
+        title:
+          type: string
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsGanttRow"
+        marks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsGanttMark"
+    AnalyticsGanttRow:
+      type: object
+      required: [name, segs]
+      properties:
+        name:
+          type: string
+        segs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsGanttSeg"
+    AnalyticsGanttSeg:
+      type: object
+      required: [from, to, c, label]
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        c:
+          type: string
+          enum: [skill, review, subagent, noskill, mcp]
+        label:
+          type: string
+    AnalyticsGanttMark:
+      type: object
+      required: [at, text, line]
+      properties:
+        at:
+          type: string
+          format: date-time
+        text:
+          type: string
+        line:
+          type: integer
+    AnalyticsImpact:
+      type: object
+      required: [value, label]
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+    AnalyticsFinding:
+      description: A «What to fix» card; Deep fields are added to this schema by stage 4
+      type: object
+      required:
+        - id
+        - sev
+        - title
+        - what
+        - ev
+        - impact
+        - impact_by_session
+        - kind
+        - scope
+        - readiness
+        - decision
+        - execution
+        - effect
+        - source
+        - lang
+        - sessions
+        - episodes
+        - cause
+        - alternative_causes
+        - preconditions
+        - exceptions
+        - verification
+        - rollback
+        - expected_effect
+      properties:
+        id:
+          type: string
+        sev:
+          $ref: "#/components/schemas/AnalyticsSeverity"
+        title:
+          type: string
+        what:
+          type: string
+        ev:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsEvidence"
+        impact:
+          description: null when nothing supports it
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsImpact"
+          nullable: true
+        impact_by_session:
+          type: object
+          additionalProperties:
+            type: number
+        impact_unit:
+          type: string
+        where:
+          type: string
+        snip:
+          type: string
+        kind:
+          type: string
+          enum: [personalization, project_rule, skill, hook, script, automation, diagnostic, habit]
+        pattern_id:
+          type: string
+        scope:
+          type: string
+          enum: [work, collection]
+        readiness:
+          type: string
+          enum: [hypothesis, needs_spec, prepared]
+        decision:
+          $ref: "#/components/schemas/ProposalDecisionStatus"
+        execution:
+          $ref: "#/components/schemas/ProposalExecutionStatus"
+        effect:
+          $ref: "#/components/schemas/ProposalEffectStatus"
+        source:
+          type: string
+        lang:
+          type: string
+        sessions:
+          type: array
+          items:
+            type: string
+        episodes:
+          type: integer
+        cause:
+          type: string
+          nullable: true
+        alternative_causes:
+          type: array
+          items:
+            type: string
+        preconditions:
+          type: array
+          items:
+            type: string
+        exceptions:
+          type: array
+          items:
+            type: string
+        verification:
+          type: string
+          nullable: true
+        rollback:
+          type: string
+          nullable: true
+        expected_effect:
+          type: string
+          nullable: true
+    AnalyticsCheckDef:
+      type: object
+      required: [id, name, how]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        how:
+          type: string
+    AnalyticsTimeline:
+      description: The timeline of one session, the colleague's sessions/<id>.json
+      type: object
+      required: [id, events, cum, ctx, tools, turns]
+      properties:
+        id:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsEvent"
+        cum:
+          type: array
+          description: Minutes from the start → cost so far in USD (estimate)
+          items:
+            $ref: "#/components/schemas/AnalyticsPoint"
+        ctx:
+          type: array
+          description: Minutes from the start → the request's input in thousands of tokens
+          items:
+            $ref: "#/components/schemas/AnalyticsPoint"
+        tools:
+          type: object
+          description: Calls by tool, the commonest first
+          additionalProperties:
+            type: integer
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsTurn"
+    AnalyticsPoint:
+      type: array
+      minItems: 2
+      maxItems: 2
+      items:
+        type: number
+    AnalyticsEvent:
+      type: object
+      required: [line, at, turn, k, x, note, side, tool]
+      properties:
+        line:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        turn:
+          type: integer
+        k:
+          type: string
+          enum: [prompt, answer, tool, err, api, wait, compact, abort, skill, agent]
+        x:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        side:
+          type: string
+          nullable: true
+        tool:
+          type: string
+          nullable: true
+        src_line:
+          type: integer
+          nullable: true
+          description: >-
+            The line of the session's transcript the event is built from, counted from 1 as a
+            Deep review's L<n> counts it: a call by its tool_use id or call_id, a prompt by its
+            promptId or its Codex turn's start, a Codex answer by its turn's end. Null when the
+            transcript names none.
+        src_kind:
+          type: string
+          nullable: true
+          description: >-
+            The kind of the transcript file src_line counts in, main or subagent; null with
+            src_line.
+    AnalyticsTurn:
+      type: object
+      required: [turn, turn_id, start, end, dur_ms, state, prompt_line, prompt, answer, tok]
+      properties:
+        turn:
+          type: integer
+        turn_id:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        dur_ms:
+          type: integer
+          format: int64
+        state:
+          type: string
+        prompt_line:
+          type: integer
+          nullable: true
+        prompt:
+          type: string
+          nullable: true
+        answer:
+          type: string
+          nullable: true
+        tok:
+          description: null when the session has no model request
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsTurnTokens"
+          nullable: true
+    AnalyticsTurnTokens:
+      type: object
+      required: [input, cached, output]
+      properties:
+        input:
+          type: integer
+          format: int64
+        cached:
+          type: integer
+          format: int64
+        output:
+          type: integer
+          format: int64
+    AnalyticsPulse:
+      type: object
+      required: [at, bars, active]
+      properties:
+        at:
+          type: string
+          format: date-time
+        bars:
+          type: array
+          description: Hook events of the last 10 minutes in 10-second buckets
+          items:
+            $ref: "#/components/schemas/AnalyticsPulseBar"
+        active:
+          type: array
+          description: Sessions with events in the last 2 minutes, the freshest first, up to 20
+          items:
+            $ref: "#/components/schemas/AnalyticsPulseActive"
+        error:
+          type: string
+          description: Only on a read failure; bars and active are then empty
+    AnalyticsPulseBar:
+      type: object
+      required: [t, agent, n]
+      properties:
+        t:
+          type: string
+          format: date-time
+          description: Start of the 10-second bucket, UTC
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        n:
+          type: integer
+    AnalyticsPulseActive:
+      type: object
+      required: [sid, agent, user_id, project, last_at, per_min]
+      properties:
+        sid:
+          type: string
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        user_id:
+          type: string
+          format: uuid
+        project:
+          type: string
+          description: Empty without a cwd
+        first:
+          type: string
+          description: The first prompt; absent when unknown
+        last_at:
+          type: string
+          format: date-time
+        per_min:
+          type: integer
+          description: Events in the last minute
+    AnalyticsDelivery:
+      type: object
+      required: [state, checked_at, last_received]
+      properties:
+        state:
+          type: string
+          enum: [ok, problem, stale, not_configured]
+        reason:
+          type: string
+        checked_at:
+          type: string
+          format: date-time
+        last_received:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsLastReceived"
+        ingest_key_last_used_at:
+          type: string
+          format: date-time
+        mcp_key_last_used_at:
+          type: string
+          format: date-time
+        settings_version:
+          type: integer
+          format: int64
+          description: The settings version stored on the server
+        applied_settings_version:
+          type: integer
+          format: int64
+          description: >-
+            The settings version the binary last reported applying; absent without a report or
+            when the binary could not read its settings cache
+        queue:
+          $ref: "#/components/schemas/AnalyticsDeliveryQueue"
+        problems:
+          type: array
+          items:
+            type: string
+    AnalyticsLastReceived:
+      type: object
+      required: [agent, source, at]
+      properties:
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        source:
+          type: string
+          description: hooks, transcripts or otel
+          enum: [hooks, transcripts, otel]
+        at:
+          type: string
+          format: date-time
+    AnalyticsDeliveryQueue:
+      description: The binary's queue as it last reported it; a count is absent when it could not read it
+      type: object
+      properties:
+        records:
+          type: integer
+          format: int64
+        bytes:
+          type: integer
+          format: int64
+    HiddenTopics:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            type: string
+    DeepReportList:
+      type: object
+      required: [reports]
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeepReportSummary"
+    DeepReportSummary:
+      type: object
+      required: [session_id, user_id, user_name, agent, published_at, tasks_count, outcomes, suspected_checks]
+      properties:
+        session_id:
+          type: string
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        published_at:
+          type: string
+          format: date-time
+        tasks_count:
+          type: integer
+        outcomes:
+          type: object
+          description: Tasks by outcome
+          additionalProperties:
+            type: integer
+        suspected_checks:
+          type: array
+          description: Ids of the checks with status suspected or confirmed
+          items:
+            type: string
+    DeepReport:
+      type: object
+      required: [session_id, user_id, user_name, agent]
+      properties:
+        session_id:
+          type: string
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        agent:
+          $ref: "#/components/schemas/AnalyticsAgent"
+        published:
+          $ref: "#/components/schemas/DeepPublished"
+        candidate:
+          $ref: "#/components/schemas/DeepCandidate"
+    DeepPublished:
+      description: The published version; absent before the first publication
+      type: object
+      required: [candidate_sha256, published_at, source_sha256, deep]
+      properties:
+        candidate_sha256:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        source_sha256:
+          type: string
+        deep:
+          type: object
+          description: >-
+            The Deep v2 document as validated by pkg/deepv2 (tasks, checks, observations, unknowns,
+            proposal_candidates); its shape is the Deep spec's
+          additionalProperties: true
+    DeepCandidate:
+      description: The newest candidate not yet checked; absent when there is none
+      type: object
+      required: [status, submitted_at, candidate_sha256]
+      properties:
+        status:
+          type: string
+          enum: [candidate, rejected]
+        submitted_at:
+          type: string
+          format: date-time
+        candidate_sha256:
+          type: string
+    ProposalReadiness:
+      type: string
+      enum: [hypothesis, needs_specification, prepared_verified]
+    ProposalDecisionStatus:
+      type: string
+      enum: [not_requested, accepted, rejected, revision_requested]
+    ProposalExecutionStatus:
+      type: string
+      enum: [not_applied, applied]
+    ProposalEffectStatus:
+      type: string
+      enum: [not_measured, helped, no_effect, worse, insufficient_data]
+    ProposalList:
+      type: object
+      required: [proposals]
+      properties:
+        proposals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Proposal"
+    Proposal:
+      description: A proposal of a user's registry, projected from published Deep reports and the journal
+      type: object
+      required:
+        - id
+        - user_id
+        - user_name
+        - group_key
+        - kind
+        - severity
+        - axes
+        - target
+        - change
+        - cause
+        - preconditions
+        - verification
+        - rollback
+        - expected_effect
+        - sources
+        - history_review
+      properties:
+        id:
+          type: string
+          description: p2:<20 hex>
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        group_key:
+          type: string
+        title:
+          type: string
+        kind:
+          type: string
+        severity:
+          description: >-
+            The colleague's _severity (conclusions.py) over the published reports of the proposal's
+            sources: bad only when an observation or check of its pattern is confirmed; warn when one is
+            suspected or the priority is high or medium; info otherwise
+          allOf:
+            - $ref: "#/components/schemas/AnalyticsSeverity"
+        axes:
+          $ref: "#/components/schemas/ProposalAxes"
+        target:
+          $ref: "#/components/schemas/ProposalTarget"
+        change:
+          type: string
+          nullable: true
+        cause:
+          type: string
+          nullable: true
+        preconditions:
+          type: array
+          items:
+            type: string
+        verification:
+          type: string
+          nullable: true
+        rollback:
+          type: string
+          nullable: true
+        expected_effect:
+          type: string
+          nullable: true
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposalSource"
+        history_review:
+          type: array
+          description: Why the axes are as they are, the journal records that moved them
+          items:
+            type: string
+        recurrence:
+          $ref: "#/components/schemas/ProposalRecurrence"
+    ProposalAxes:
+      type: object
+      required: [readiness, decision, execution, effect]
+      properties:
+        readiness:
+          $ref: "#/components/schemas/ProposalReadiness"
+        readiness_reason:
+          type: string
+        decision:
+          $ref: "#/components/schemas/ProposalDecision"
+        execution:
+          $ref: "#/components/schemas/ProposalExecution"
+        effect:
+          $ref: "#/components/schemas/ProposalEffect"
+    ProposalDecision:
+      type: object
+      required: [status, note]
+      properties:
+        status:
+          $ref: "#/components/schemas/ProposalDecisionStatus"
+        note:
+          type: string
+    ProposalExecution:
+      type: object
+      required: [status, at, version, evidence]
+      properties:
+        status:
+          $ref: "#/components/schemas/ProposalExecutionStatus"
+        at:
+          type: string
+        version:
+          type: string
+        evidence:
+          type: array
+          items:
+            type: string
+    ProposalEffect:
+      type: object
+      required: [status, method, metric, n_before, n_after, note]
+      properties:
+        status:
+          $ref: "#/components/schemas/ProposalEffectStatus"
+        method:
+          type: string
+        metric:
+          type: string
+        n_before:
+          type: integer
+        n_after:
+          type: integer
+        note:
+          type: string
+    ProposalTarget:
+      type: object
+      required: [kind, locator, version]
+      properties:
+        kind:
+          type: string
+        locator:
+          type: string
+        version:
+          type: string
+    ProposalSource:
+      type: object
+      required: [session_id, task_id, source_sha256, evidence]
+      properties:
+        session_id:
+          type: string
+        task_id:
+          type: string
+        source_sha256:
+          type: string
+        evidence:
+          type: array
+          description: Lines of the source, L<n>
+          items:
+            type: string
+    ProposalRecurrence:
+      description: The fold of the coach's checks; absent without one
+      type: object
+      required: [result, observations, repeats, checked_at, checks]
+      properties:
+        result:
+          type: string
+          enum: [repeated, not_repeated, not_enough_data]
+        observations:
+          type: integer
+          nullable: true
+        repeats:
+          type: integer
+          nullable: true
+        checked_at:
+          type: string
+          format: date-time
+        checks:
+          type: integer
+    DecisionRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, rejected, revision_requested]
+        note:
+          type: string
+          maxLength: 2000
+    Journal:
+      type: object
+      required: [entries, cycle]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/JournalEntry"
+        cycle:
+          $ref: "#/components/schemas/ImprovementCycle"
+    JournalEntry:
+      description: >-
+        A coach decision with its checks folded in, or a lifecycle event of a proposal. record is the
+        record's canonical form, masked; the other fields are lifted from it for the page.
+      type: object
+      required: [record_id, kind, recorded_at, user_id, user_name, record]
+      properties:
+        record_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [decision, application, effect, coach_decision]
+        recorded_at:
+          type: string
+          format: date-time
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        proposal_id:
+          type: string
+        topic_key:
+          type: string
+        decision:
+          type: string
+          description: The coach's decision, or the status of a decision event
+        result:
+          type: string
+          description: The last check's result of a coach decision
+          enum: [repeated, not_repeated, not_enough_data]
+        observations:
+          type: integer
+        repeats:
+          type: integer
+        checked_at:
+          type: string
+          format: date-time
+        checks:
+          type: integer
+        record:
+          type: object
+          additionalProperties: true
+    ImprovementCycle:
+      description: Steps 4–6 of the improvement cycle over the journal of the period
+      type: object
+      required: [discussed, applied, checked, checked_of, empty]
+      properties:
+        discussed:
+          type: integer
+        applied:
+          type: integer
+        checked:
+          type: integer
+        checked_of:
+          type: integer
+          description: The N of «checked of N», equal to applied
+        empty:
+          type: boolean
+          description: The journal has no record in the period
+    JournalVerification:
+      type: object
+      required: [ok, records]
+      properties:
+        ok:
+          type: boolean
+        records:
+          type: integer
+          format: int64
+        at_seq:
+          type: integer
+          format: int64
+          description: The first record whose hash or link does not hold; only when ok is false
+    SkillOpportunities:
+      type: object
+      required: [stale]
+      properties:
+        submitted_at:
+          type: string
+          format: date-time
+        stale:
+          type: boolean
+          description: The set of published Deep reports changed since the report was made
+        report:
+          type: object
+          description: The validated skill_opportunities report; absent when the user has none
+          additionalProperties: true

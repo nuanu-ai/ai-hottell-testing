@@ -1,0 +1,68 @@
+/* «Инструменты и MCP» of v5.1: the tools table at 8fr, the aside at 4fr; one column on a narrow screen. */
+.tools-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.tool-name {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+@media (max-width: 900px) {
+  .tools-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tools-aside {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.tools-wide {
+  grid-column: 1 / -1;
+}
+
+.tools-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tools-rows > li {
+  display: grid;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 13px;
+  border-top: 1px solid var(--line);
+}
+
+.tools-rows > .tools-mcp {
+  grid-template-columns: minmax(0, 1fr) 44px 30px 40px;
+}
+
+.tools-rows > .tools-perm {
+  grid-template-columns: minmax(0, 1fr) 56px;
+  gap: 10px;
+}
+
+.tools-minutes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+  align-items: center;
+}
+
+.tools-minutes.m4 .bar i {
+  background: var(--m4);
+}
+
+.tools-grid .soft {
+  color: var(--ink-2);
+}

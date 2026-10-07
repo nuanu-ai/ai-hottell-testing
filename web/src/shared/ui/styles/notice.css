@@ -1,0 +1,26 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+/* В v3 отдельного уведомления нет: вид выведен из строки полноты .cov и левой полосы карточки .find. */
+
+.notice {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+}
+.notice.bad {
+  background: var(--bad-soft);
+  border-left-color: var(--bad);
+}
+.notice.ok {
+  background: var(--ok-soft);
+  border-left-color: var(--ok);
+}
+.notice.acc {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+.notice.warn {
+  background: var(--warn-soft);
+  border-left-color: var(--warn);
+}

@@ -1,0 +1,27 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+.seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 0;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.seg button + button {
+  border-left: 1px solid var(--line);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--surface);
+}
+.seg button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

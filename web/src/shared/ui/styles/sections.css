@@ -1,0 +1,69 @@
+/* Источник: ai-hottell@c3c8357 ui/static/index.html, .sec-h и details.box (HT-246). */
+
+.sec-h {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sec-h h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+.sec-h .sub {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.sec-h .end {
+  margin-left: auto;
+}
+details.box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+  font-size: 13px;
+}
+details.box summary {
+  cursor: pointer;
+  color: var(--ink-2);
+}
+details.box > ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  color: var(--ink-2);
+}
+
+/* The v5.1 page head (ai-hottell@c3c8357 .skh, actions as .hero .acts), HT-439. */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px 24px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.page-head-t {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.page-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.page-head .sub {
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+@media (max-width: 900px) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

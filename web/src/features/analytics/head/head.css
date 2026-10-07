@@ -1,0 +1,17 @@
+/* «Аналитика: <Имя> · ← Команда» at the start of the head's second row (HT-458). */
+.person-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.person-head b {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.person-head .link {
+  white-space: nowrap;
+}

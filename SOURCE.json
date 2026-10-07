@@ -3,9 +3,16 @@
   "branch": "camp",
   "commit": "76da83c871245b6497c9203f765050cb24d21e4b",
   "release": "v0.3.6",
-  "scope": "macOS client: cmd/hottell, internal/hottell, pkg/deepv2, skills; development tests and fixtures omitted",
+  "scope": "self-hosted server, web application, PostgreSQL migrations, macOS client and embedded skills; upstream tests, fixtures and private deployment files omitted",
   "assets": {
     "hottell-darwin-amd64": "be373cfe2e351d9297d2798156db44cf8af728335fb95af364fb1c7ac33cff88",
     "hottell-darwin-arm64": "7e0b845e3dabb61d586ed844751eafcb445ec0b99ad299c59321426694b2042e"
-  }
+  },
+  "distribution_changes": [
+    "self-host Docker Compose and HTTPS overlay",
+    "local client release files instead of private Gitea",
+    "generic project information without camp photographs or private notes",
+    "MIT license, standalone setup and database backup/restore scripts",
+    "unused frontend test fixtures and test-only Vite configuration omitted"
+  ]
 }

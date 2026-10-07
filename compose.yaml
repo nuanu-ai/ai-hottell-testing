@@ -1,0 +1,90 @@
+name: hottell
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hottell
+      POSTGRES_USER: hottell
+      POSTGRES_PASSWORD: ${HT_POSTGRES_PASSWORD:?Run ./scripts/setup.sh first}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U hottell -d hottell"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    image: hottell-selfhost:0.3.6
+    pull_policy: never
+    entrypoint: [/cli]
+    command: [migrate, up]
+    environment:
+      <<: &app-env
+        HT_DATABASE_URL: postgres://hottell:${HT_POSTGRES_PASSWORD:?Run setup}@postgres:5432/hottell?sslmode=disable
+        HT_PUBLIC_ORIGIN: ${HT_PUBLIC_ORIGIN:-http://localhost:8080}
+        HT_COOKIE_SECURE: ${HT_COOKIE_SECURE:-false}
+        HT_WEBAUTHN_RP_ID: ${HT_WEBAUTHN_RP_ID:-localhost}
+        HT_WEBAUTHN_RP_ORIGINS: ${HT_PUBLIC_ORIGIN:-http://localhost:8080}
+        HT_COLLECTOR_URL: http://collector:4318
+        HT_CLICKHOUSE_URL: clickhouse://ht_reader:${HT_CLICKHOUSE_READER_PASSWORD:?Run setup}@clickhouse:9000/otel
+        HT_RELEASE_DIR: /opt/hottell/releases
+      HT_BOOTSTRAP_EMAIL: ${HT_BOOTSTRAP_EMAIL:-}
+      HT_BOOTSTRAP_NAME: ${HT_BOOTSTRAP_NAME:-}
+      HT_BOOTSTRAP_PASSWORD: ${HT_BOOTSTRAP_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: deployments/Dockerfile
+    image: hottell-selfhost:0.3.6
+    restart: unless-stopped
+    environment: *app-env
+    ports:
+      - "${HT_BIND_ADDRESS:-127.0.0.1}:${HT_PORT:-8080}:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_USER: ht
+      CLICKHOUSE_PASSWORD: ${HT_CLICKHOUSE_PASSWORD:?Run setup}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+      HT_CLICKHOUSE_READER_PASSWORD: ${HT_CLICKHOUSE_READER_PASSWORD:?Run setup}
+    volumes:
+      - chdata:/var/lib/clickhouse
+      - ./deployments/clickhouse-users.xml:/etc/clickhouse-server/users.d/hottell-reader.xml:ro
+      - ./deployments/clickhouse-server.xml:/etc/clickhouse-server/config.d/hottell-memory.xml:ro
+    mem_limit: 3g
+    healthcheck:
+      test: [CMD-SHELL, 'clickhouse-client --user ht --password "$${CLICKHOUSE_PASSWORD}" -q "SELECT 1"']
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    environment:
+      HT_CLICKHOUSE_PASSWORD: ${HT_CLICKHOUSE_PASSWORD:?Run setup}
+    volumes:
+      - ./deployments/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  chdata:

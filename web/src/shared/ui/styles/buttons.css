@@ -1,0 +1,70 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn.pri {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--ink-3);
+}
+.btn.pri:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Маленькая кнопка — как «Пересобрать» (#rebuild) в v3. */
+.btn.sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+/* Крупная кнопка главного действия — как .btn.lg в шапке «Что исправить» v5.1. */
+.btn.lg {
+  padding: 8px 14px;
+  font-size: 13.5px;
+}
+.btn:disabled,
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+.link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Опасное действие («Отозвать», «Удалить»): .btn перекрыл бы цвет .t-bad из base.css. */
+.btn.t-bad {
+  color: var(--bad);
+}
+.btn.t-bad:hover:not(:disabled) {
+  border-color: var(--bad);
+}

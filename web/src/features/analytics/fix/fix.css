@@ -1,0 +1,113 @@
+/* «Что исправить» (README v5.1): main is a grid of the cycle, the hero, coverage and the sections. */
+.fix {
+  display: grid;
+  gap: 16px;
+}
+.fix .topics > .link {
+  justify-self: start;
+}
+/* «Обсудить» on a topic: its buttons share one row with «Не проблема», and the command row opens
+   on its own line under them rather than beside «Не проблема», which it would stretch. The row
+   adds nothing to the width of the actions (a wrapping flex row sums every item): on a wide
+   screen an open row widens them to 560 px, the title and «why» keep the rest. */
+.fix .t-acts .discuss {
+  display: contents;
+}
+.fix .t-acts .cmd {
+  order: 1;
+  flex: 1 1 100%;
+  contain: inline-size;
+}
+@media (min-width: 901px) {
+  .fix .t-acts:has(.cmd) {
+    min-width: 560px;
+  }
+}
+.t-what,
+.t-check {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.t-pre {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+/* «Исправлено» and «Здоровье сбора данных»: ai-hottell@c3c8357 ui/static/index.html, .jlist/.jempty/.hc. */
+.jlist {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  min-width: 0;
+}
+.jempty {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+.jempty b {
+  font-weight: 500;
+}
+.jempty-t {
+  display: grid;
+  gap: 2px;
+}
+.jempty-t .muted {
+  font-size: 13px;
+}
+.jempty-n {
+  font-size: 12px;
+}
+.journal {
+  display: grid;
+  gap: 8px;
+}
+.hcards {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.hc {
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 16px;
+  min-width: 0;
+}
+.hc .hh {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  font-weight: 600;
+}
+.hc .full {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.hc-impact {
+  white-space: nowrap;
+}
+.hc-what {
+  color: var(--ink-2);
+}
+.hc-where {
+  background: none;
+  padding: 0;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.hc pre.snip {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .jempty {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
