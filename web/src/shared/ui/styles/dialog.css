@@ -1,0 +1,35 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+/* В v3 диалогов нет: окно оформлено как панель .p поверх затемнения. */
+
+.dialog {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 16px;
+  width: min(480px, calc(100vw - 32px));
+}
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+.dialog h2,
+.dialog h3 {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+/* The head of a dialog with a title: the panel's .ph, 14px/600 (HT-452). */
+.dialog .ph {
+  margin-bottom: 12px;
+}
+.dialog .ph h2 {
+  margin: 0;
+}
+/* Body text: no browser margins, 13.5px --ink-2; the buttons on the right, 16px below. */
+.dialog p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.dialog-acts {
+  margin-top: 16px;
+}

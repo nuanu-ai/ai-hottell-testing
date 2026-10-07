@@ -1,0 +1,241 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.kpi {
+  background: var(--surface);
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+.kpi .l {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.kpi .v {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.kpi .d {
+  font: 12px var(--f-mono);
+}
+.up-bad,
+.down-bad {
+  color: var(--bad);
+}
+.down-good,
+.up-good {
+  color: var(--ok);
+}
+.flat {
+  color: var(--ink-3);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.st {
+  background: var(--surface);
+  padding: 10px 12px;
+  display: grid;
+  gap: 2px;
+}
+.st .l {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.st .v {
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px 24px;
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 20px;
+}
+.hero h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+  max-width: 56ch;
+}
+.hero .sum {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.hero .sum div {
+  display: grid;
+  gap: 2px;
+}
+.hero .sum b {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.hero .sum span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .kpis,
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* «Что исправить»: цикл улучшений. Источник: ai-hottell@c3c8357, ui/static/index.html:L174–L188, L326–L365. */
+.cycle {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  position: relative;
+}
+.cstep {
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  border: 0;
+  border-left: 1px solid var(--line);
+  padding: 12px 16px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.cstep:first-child {
+  border-left: 0;
+}
+.cstep[aria-pressed='true'] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.cstep .cl {
+  font-size: 12px;
+  color: var(--ink-2);
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.cstep .cl b {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+.cstep .cn {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cstep .cn.ok {
+  color: var(--ok);
+}
+.cstep .cn small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.cstep .cs {
+  font: 11.5px var(--f-mono);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chint {
+  grid-column: 4 / 7;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+@media (max-width: 900px) {
+  .cycle {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cstep:nth-child(4) {
+    border-left: 0;
+  }
+  .cstep:nth-child(n + 4) {
+    border-top: 1px solid var(--line);
+  }
+  .chint {
+    grid-column: 1 / -1;
+    border-left: 0;
+  }
+}
+@media (max-width: 520px) {
+  .cycle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cstep:nth-child(4) {
+    border-left: 1px solid var(--line);
+  }
+  .cstep:nth-child(odd) {
+    border-left: 0;
+  }
+  .cstep:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+.cdot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+  opacity: 0;
+}
+/* The v5.1 hero: a title, a line under it, actions on the right (ai-hottell@c3c8357 .hero .hs/.acts). */
+.hero .hero-t {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.hero .hs {
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+.hero .acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

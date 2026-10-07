@@ -1,0 +1,34 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+
+.tag {
+  display: inline-block;
+  font: 500 11px/1 var(--f-mono);
+  padding: 4px 6px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.tag.claude,
+.tag.acc {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.tag.codex,
+.tag.ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.tag.bad {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.tag.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

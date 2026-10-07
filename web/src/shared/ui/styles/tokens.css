@@ -1,0 +1,61 @@
+/* Источник: https://github.com/nuanu-ai/ai-hottell, ui/static/index.html, коммит b4b6153 (HT-118). */
+/* Layout: product shell — top bar, tabs, dense panels on a 12-col grid; tables and charts carry the page.
+   Темы две, по умолчанию — как в системе (prefers-color-scheme). Тёмная — в самом :root: скрипт в index.html
+   ставит data-theme до первой отрисовки, а без него или без matchMedia страница открывается тёмной.
+   Явный выбор «Тёмная» или «Светлая» сохраняется в ht-theme и перекрывает системную тему. */
+
+:root {
+  color-scheme: dark;
+  --bg: #0e1116;
+  --surface: #161b22;
+  --surface-2: #1d232c;
+  --hover: #242b36;
+  --line: #2b323d;
+  --ink: #e8edf3;
+  --ink-2: #aeb8c6;
+  --ink-3: #7f8a9a;
+  --accent: #78a9ff;
+  --accent-soft: #1a2740;
+  --m1: #78a9ff;
+  --m2: #be95ff;
+  --m3: #3ddbd9;
+  --m4: #ffb35c;
+  --ok: #42be65;
+  --ok-soft: #10301c;
+  --warn: #f1c21b;
+  --warn-soft: #33290c;
+  --bad: #ff8389;
+  --bad-soft: #3a1618;
+  --on-accent: #0e1116;
+  /* Наведение на заливку акцентом: контраст с --on-accent не ниже 4.5:1 в обеих темах. */
+  --accent-hover: #a6c8ff;
+  --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f2f4f7;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --hover: #e6ebf2;
+  --line: #dde2ea;
+  --ink: #131820;
+  --ink-2: #465264;
+  /* Темнее v3 (#737f90): приглушённый текст подсказок держит 4.5:1 на --bg, --surface и --surface-2. */
+  --ink-3: #626e7f;
+  --accent: #0f62fe;
+  --accent-soft: #e5edff;
+  --m1: #0f62fe;
+  --m2: #8a3ffc;
+  --m3: #08bdba;
+  --m4: #ee8a1a;
+  --ok: #198038;
+  --ok-soft: #defbe6;
+  --warn: #a15c00;
+  --warn-soft: #fcf0dc;
+  --bad: #da1e28;
+  --bad-soft: #fff1f1;
+  --on-accent: #ffffff;
+  --accent-hover: #0043ce;
+}

@@ -1,0 +1,225 @@
+/* Источник: ai-hottell@c3c8357, ui/static/index.html, .topic и .t-* (L199–L216), узкий экран (L336–L340). */
+
+/* TopicCard (HT-220) */
+.topics {
+  display: grid;
+  gap: 10px;
+}
+.topic {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  position: relative;
+  min-width: 0;
+  scroll-margin-top: 112px;
+}
+.topic::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  box-shadow: inset 3px 0 0 var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+.topic.flash::after {
+  animation: topic-flash 1.2s cubic-bezier(0.2, 0, 0, 1);
+}
+@keyframes topic-flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.t-top {
+  padding: 14px 16px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 20px;
+  align-items: center;
+  min-width: 0;
+}
+.t-h {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+/* A long title shrinks itself, never the dot or the tag beside it. */
+.t-h .sev,
+.t-h .tag {
+  flex: none;
+}
+.t-h .ttl {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.t-price {
+  font-size: 13px;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+.t-price b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.t-why {
+  color: var(--ink-2);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.t-acts {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.t-top .cmdslot {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.t-tog {
+  text-align: left;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 8px 16px;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.t-tog:hover {
+  color: var(--ink);
+}
+.t-tog:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.t-open {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  border-top: 1px solid var(--line);
+}
+.t-l {
+  padding: 14px 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+.t-l > p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.t-r {
+  padding: 14px 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  border-left: 1px solid var(--line);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+/* EvidenceRows, Axes, Snippet (HT-223): .evr, .axes, code.w (L217–L222). */
+.blk {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.evr {
+  display: grid;
+  grid-template-columns: 170px 88px minmax(0, 1fr);
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+  font-size: 13px;
+}
+.evr .link {
+  font: 12.5px var(--f-mono);
+  text-align: left;
+}
+.evr .tm {
+  font: 12px var(--f-mono);
+  color: var(--ink-3);
+}
+.evr .x {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.evr-none {
+  font-size: 13px;
+}
+.evr-more {
+  font-size: 12px;
+}
+.axes {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 12.5px;
+}
+.axes span:nth-child(odd) {
+  color: var(--ink-3);
+}
+code.w {
+  font: 12px var(--f-mono);
+  color: var(--ink-2);
+  background: none;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .evr {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .evr .x {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .t-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .t-price {
+    text-align: left;
+    white-space: normal;
+  }
+  .t-acts {
+    justify-content: flex-start;
+  }
+  .t-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .t-r {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* base.css stops the animation of elements only; the flash lives on ::after. */
+@media (prefers-reduced-motion: reduce) {
+  .topic.flash::after {
+    animation: none;
+  }
+}

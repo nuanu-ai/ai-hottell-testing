@@ -1,0 +1,45 @@
+/* Строки списков Обзора (HT-228): ai-hottell@c3c8357 ui/static/index.html, .frm и .top6. */
+
+.frm {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) 84px 64px 64px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.frm .r {
+  text-align: right;
+}
+.frm .link {
+  font-size: 12.5px;
+}
+
+.top6 button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 8px 0;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: inherit;
+}
+.top6 button:hover {
+  background: var(--hover);
+}
+.top6 button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.top6 .t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

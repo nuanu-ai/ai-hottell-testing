@@ -1,0 +1,25 @@
+/* Дизайн-система hottell (HT-118): токены, база и стили компонентов по группам. */
+@import './tokens.css';
+@import './base.css';
+@import './buttons.css';
+@import './tags.css';
+@import './notice.css';
+@import './states.css';
+@import './forms.css';
+@import './savebar.css';
+@import './segmented.css';
+@import './panels.css';
+@import './tables.css';
+@import './code.css';
+@import './dialog.css';
+@import './metrics.css';
+@import './bits.css';
+@import './lists.css';
+@import './feed.css';
+@import './charts.css';
+@import './shell.css';
+@import './auth.css';
+@import './topics.css';
+@import './sections.css';
+@import './deep.css';
+@import './story.css';

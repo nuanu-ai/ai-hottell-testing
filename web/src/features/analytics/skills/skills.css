@@ -1,0 +1,70 @@
+/* «Skills» of v5.1: the page head, then the opened skills at 8fr and the aside at 4fr. */
+.skills-page {
+  display: grid;
+  gap: 16px;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.skills-aside {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.skills-groups {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skills-groups .grp {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 28px 34px;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.skills-acts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 8px;
+  align-items: center;
+}
+
+.skills-page .m2 .bar i {
+  background: var(--m2);
+}
+
+.skills-page .big {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.skills-label {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.skills-note {
+  font-size: 12.5px;
+}
+
+.skills-soft {
+  color: var(--ink-2);
+}
+
+@media (max-width: 900px) {
+  .skills-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

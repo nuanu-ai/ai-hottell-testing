@@ -1,0 +1,17 @@
+/* «Трение» of v5.1: a signal with no chosen session is dimmed. */
+.friction-muted {
+  color: var(--ink-3);
+}
+
+.friction-name {
+  font-weight: 500;
+}
+
+.friction-how {
+  max-width: 440px;
+  font-size: 12.5px;
+}
+
+.friction-topic {
+  font-size: 12.5px;
+}

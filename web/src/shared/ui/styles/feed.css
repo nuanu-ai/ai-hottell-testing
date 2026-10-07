@@ -1,0 +1,272 @@
+/* Лента сессии (HT-232): ai-hottell@c3c8357 ui/static/index.html, .ev и .turn-h. */
+
+.feed {
+  display: grid;
+  min-width: 0;
+}
+.ev {
+  display: grid;
+  grid-template-columns: 48px 12px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.ev .t {
+  font: 12px/1.5 var(--f-mono);
+  color: var(--ink-3);
+}
+.ev .ic {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border: 2px solid var(--ink-3);
+  border-radius: 50%;
+}
+.ev.prompt .ic {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ev.answer .ic {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+.ev.err .ic {
+  background: var(--bad);
+  border-color: var(--bad);
+}
+.ev.abort .ic {
+  border-color: var(--bad);
+  border-radius: 0;
+}
+.ev.wait .ic,
+.ev.compact .ic {
+  border-color: var(--warn);
+  border-radius: 0;
+}
+.ev.skill .ic {
+  background: var(--m2);
+  border-color: var(--m2);
+}
+.ev.agent .ic {
+  background: var(--m3);
+  border-color: var(--m3);
+}
+.ev.api .ic {
+  border-color: var(--m2);
+}
+.ev .body {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.ev .body .x {
+  overflow-wrap: anywhere;
+}
+.ev.prompt .x {
+  font-weight: 500;
+}
+.ev.tool .x,
+.ev.err .x {
+  font: 12.5px var(--f-mono);
+}
+.ev .side {
+  font: 12px var(--f-mono);
+  color: var(--ink-3);
+  text-align: right;
+  white-space: nowrap;
+}
+.ev .note {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.ev .note.bad {
+  color: var(--bad);
+}
+.ev.hl {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.turn-h {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 0 6px;
+  font: 500 11px/1.3 var(--f-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+.turn-h:first-child {
+  padding-top: 0;
+}
+
+/* Шапка ленты сессии (HT-286): ai-hottell@c3c8357 ui/static/index.html, .sess-top/.sess-h/.meta. */
+.sess {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.sess-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 24px;
+  align-items: start;
+}
+.sess-h {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.sess-h h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.sess-h h1.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sess-h .sess-more {
+  justify-self: start;
+  font-size: 12.5px;
+}
+.sess-h .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--ink-2);
+  align-items: center;
+}
+.sess-h .tag.muted {
+  color: var(--ink-3);
+}
+.sess-d {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .sess-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sess-d {
+    justify-items: start;
+  }
+}
+
+/* Лента сессии (HT-290): прокрутка внутри панели, окно событий. */
+.tl-p {
+  gap: 10px;
+  min-width: 0;
+}
+.tl-p .ph {
+  align-items: center;
+}
+.tl-ctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tl {
+  max-height: 900px;
+  overflow-y: auto;
+  position: relative;
+  display: grid;
+}
+.tl-shift {
+  padding: 8px 0;
+}
+
+/* Живая лента (HT-293): «идёт сейчас» и плашка новых событий. */
+.tl-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.livebadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ok);
+}
+.livebadge .pdot i.ring {
+  animation: live-ring 1.6s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+@keyframes live-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.newev {
+  position: sticky;
+  bottom: 8px;
+  justify-self: center;
+  margin-top: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 0;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* Правая колонка ленты (HT-296): ai-hottell@c3c8357 ui/static/index.html, .g84/.col16/.src. */
+.g84 {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  gap: 16px;
+  align-items: start;
+}
+.col16 {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.sess-side {
+  gap: 8px;
+}
+.sess-side .li {
+  grid-template-columns: minmax(0, 1fr) 70px 36px;
+}
+.srcs {
+  display: grid;
+  gap: 8px;
+}
+.src {
+  display: grid;
+  grid-template-columns: 110px auto;
+  gap: 4px 10px;
+  align-items: baseline;
+  font-size: 13px;
+}
+.src .l {
+  color: var(--ink-2);
+}
+.src .n {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+@media (max-width: 900px) {
+  .g84 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

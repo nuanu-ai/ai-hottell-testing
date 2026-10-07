@@ -1,0 +1,18 @@
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      HT_DOMAIN: ${HT_DOMAIN:?Set your DNS name in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployments/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+volumes:
+  caddy_data:
+  caddy_config:

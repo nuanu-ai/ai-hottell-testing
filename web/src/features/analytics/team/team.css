@@ -1,0 +1,55 @@
+/* «Команда» (HT-466): the title, the table of people in its own scroll frame, the data limits. */
+.team {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.team .p {
+  min-width: 0;
+}
+/* A column head is a button that sorts; the arrow follows aria-sort. */
+.team th .sort {
+  all: unset;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+.team th .sort:hover {
+  color: var(--ink);
+}
+.team th .sort:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.team th[aria-sort='ascending'] .sort::after {
+  content: ' ↑';
+}
+.team th[aria-sort='descending'] .sort::after {
+  content: ' ↓';
+}
+.team td.t .tag {
+  margin-left: 8px;
+}
+.team td.t .sub {
+  margin-left: 8px;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+/* The pulse (HT-540): the line at the row's height, its caption under the head on a line of its
+   own. On a narrow screen the table scrolls with it, as with any other column. */
+.team th.pulse .sub {
+  display: block;
+  font-family: var(--f-body);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.team td.pulse {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  color: var(--ink-3);
+}
